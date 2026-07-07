@@ -9,7 +9,7 @@ const DICTS: Record<Locale, Record<string, string>> = { ua, ru };
 const COOKIE_NAME = "locale";
 const DEFAULT_LOCALE: Locale = "ua";
 
-function isLocale(value: string | undefined): value is Locale {
+export function isLocale(value: unknown): value is Locale {
   return value === "ua" || value === "ru";
 }
 
@@ -26,8 +26,17 @@ export function getT(locale: Locale): (key: string) => string {
   return (key: string): string => dict[key] ?? key;
 }
 
-/** Picks a localized field off a DB row, e.g. pick(category, 'name', 'ru') -> category.name_ru. */
+/**
+ * Picks a localized field off a DB row, e.g. pick(category, 'name', 'ru') -> category.name_ru.
+ * Falls back to the other locale when the requested value is missing/empty,
+ * so a partially translated row never renders a blank label.
+ */
 export function pick<T>(row: T, field: string, locale: Locale): string {
-  const value = (row as Record<string, unknown>)[`${field}_${locale}`];
-  return typeof value === "string" ? value : "";
+  const record = row as Record<string, unknown>;
+  const primary = record[`${field}_${locale}`];
+  if (typeof primary === "string" && primary !== "") return primary;
+
+  const other: Locale = locale === "ua" ? "ru" : "ua";
+  const fallback = record[`${field}_${other}`];
+  return typeof fallback === "string" ? fallback : "";
 }

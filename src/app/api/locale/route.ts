@@ -1,9 +1,5 @@
 import { cookies } from "next/headers";
-import type { Locale } from "@/lib/i18n";
-
-function isLocale(value: unknown): value is Locale {
-  return value === "ua" || value === "ru";
-}
+import { isLocale, type Locale } from "@/lib/i18n";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
