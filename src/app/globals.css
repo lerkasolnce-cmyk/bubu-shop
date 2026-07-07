@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #fbf7f0;
+  --color-blush: #f5d7d7;
+  --color-mint: #cde8dd;
+  --color-ink: #4a3b32;
+  --color-accent: #e8927c;
+
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  --font-sans: var(--font-nunito);
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+}
