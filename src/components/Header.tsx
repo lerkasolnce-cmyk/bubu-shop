@@ -67,9 +67,7 @@ export default async function Header() {
           {t("header.phone")}
         </a>
 
-        <div className="hidden sm:block">
-          <LangSwitch locale={locale} />
-        </div>
+        <LangSwitch locale={locale} />
 
         <Link
           href="/cart"
