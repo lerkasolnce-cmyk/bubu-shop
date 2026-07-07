@@ -42,5 +42,19 @@
   "checkout.paymentCod": "Оплата при получении",
   "checkout.submit": "Подтвердить заказ",
   "order.thanksTitle": "Спасибо за заказ!",
-  "order.thanksText": "Мы свяжемся с вами в ближайшее время для подтверждения."
+  "order.thanksText": "Мы свяжемся с вами в ближайшее время для подтверждения.",
+  "hero.title": "Коляски для самых маленьких — с любовью из Одессы",
+  "hero.subtitle": "Проверенные бренды, приятные цены и забота о каждой семье",
+  "hero.cta": "Выбрать коляску",
+  "home.hits": "Хиты продаж",
+  "home.sale": "Акции",
+  "badge.hit": "Хит",
+  "badge.sale": "Акция",
+  "category.productsOne": "товар",
+  "category.productsFew": "товара",
+  "category.productsMany": "товаров",
+  "advantages.delivery": "Доставка Новой Почтой по Украине",
+  "advantages.warranty": "Гарантия от производителя",
+  "advantages.shopOdesa": "Магазин в Одессе",
+  "advantages.payment": "Оплата онлайн или при получении"
 }
