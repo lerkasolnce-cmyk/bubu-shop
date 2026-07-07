@@ -46,7 +46,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
    ```
    npx tsx scripts/seed.ts
    ```
-   Скрипт ідемпотентний (upsert по `slug`) — можна запускати повторно. Успішний запуск виводить `seeded 5 categories, 49 products`.
+   Скрипт ідемпотентний (upsert по `slug`) — можна запускати повторно. Успішний запуск виводить `seeded 5 categories, 52 products`.
 
 ## Deploy on Vercel
 
