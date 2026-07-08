@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getLocale, getT, pick } from "@/lib/i18n";
@@ -10,7 +11,8 @@ import AddToCartButton from "@/components/AddToCartButton";
 import BuyNowButton from "@/components/BuyNowButton";
 import ProductRow from "@/components/ProductRow";
 
-async function getProductBySlug(slug: string): Promise<Product | null> {
+// cache(): generateMetadata and the page both need the product — dedupe to one fetch per request.
+const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   if (isDemoMode()) return demoProducts.find((p) => p.slug === slug) ?? null;
 
   try {
@@ -21,7 +23,7 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
   } catch {
     return null;
   }
-}
+});
 
 /** 4 products from the same category, excluding the current one. Fail-soft -> []. */
 async function getSimilarProducts(categoryId: string | null, excludeSlug: string): Promise<Product[]> {
@@ -99,11 +101,14 @@ export default async function ProductPage({
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Gallery images={product.images} alt={name} />
+        {/* key: reset Gallery's active-thumbnail state on client-side navigation between products */}
+        <Gallery key={product.slug} images={product.images} alt={name} />
 
         <div className="flex flex-col gap-4">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wide text-ink/50">{product.brand}</span>
+            {product.brand && (
+              <span className="text-xs font-semibold uppercase tracking-wide text-ink/50">{product.brand}</span>
+            )}
             <h1 className="mt-1 text-2xl font-extrabold text-ink sm:text-3xl">{name}</h1>
           </div>
 

@@ -12,7 +12,7 @@ export default function SpecsTable({ specs, title }: { specs: Product["specs"]; 
           <tbody>
             {entries.map(([key, value], i) => (
               <tr key={key} className={i % 2 === 0 ? "bg-white" : "bg-cream/60"}>
-                <td className="w-1/2 px-4 py-2.5 font-semibold capitalize text-ink/70">{key}</td>
+                <td className="w-1/2 px-4 py-2.5 font-semibold text-ink/70">{key}</td>
                 <td className="px-4 py-2.5 text-ink">{value}</td>
               </tr>
             ))}

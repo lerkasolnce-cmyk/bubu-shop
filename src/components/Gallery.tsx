@@ -19,6 +19,9 @@ function StrollerPlaceholder() {
 
 export default function Gallery({ images, alt }: { images: string[]; alt: string }) {
   const [active, setActive] = useState(0);
+  // Defensive: if state outlives an images-prop change (e.g. missing key upstream),
+  // never index past the end — next/image throws on an undefined src.
+  const current = images[active] ?? images[0];
 
   if (images.length === 0) {
     return (
@@ -32,7 +35,7 @@ export default function Gallery({ images, alt }: { images: string[]; alt: string
     <div className="flex flex-col gap-3">
       <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-blush/40 bg-white">
         <Image
-          src={images[active]}
+          src={current}
           alt={alt}
           fill
           sizes="(min-width: 1024px) 50vw, 100vw"
