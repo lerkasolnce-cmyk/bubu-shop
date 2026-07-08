@@ -36,6 +36,8 @@
   "product.inStock": "В наявності",
   "product.preorder": "Під замовлення",
   "product.outOfStock": "Немає в наявності",
+  "product.freeDelivery": "Безкоштовна доставка Новою Поштою",
+  "product.warranty": "Офіційна гарантія від виробника",
   "cart.title": "Кошик",
   "cart.empty": "Кошик порожній",
   "cart.total": "Разом",

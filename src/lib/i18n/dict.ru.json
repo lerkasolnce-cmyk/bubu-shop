@@ -36,6 +36,8 @@
   "product.inStock": "В наличии",
   "product.preorder": "Под заказ",
   "product.outOfStock": "Нет в наличии",
+  "product.freeDelivery": "Бесплатная доставка Новой Почтой",
+  "product.warranty": "Официальная гарантия от производителя",
   "cart.title": "Корзина",
   "cart.empty": "Корзина пуста",
   "cart.total": "Итого",
