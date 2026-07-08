@@ -1,5 +1,6 @@
 import { getLocale, getT, pick } from "@/lib/i18n";
 import { createServerClient } from "@/lib/supabase/server";
+import { demoCategories, demoProducts, isDemoMode } from "@/lib/demo";
 import type { Category, Product } from "@/lib/types";
 import Hero from "@/components/Hero";
 import CategoryGrid from "@/components/CategoryGrid";
@@ -8,8 +9,8 @@ import BrandStrip from "@/components/BrandStrip";
 import Advantages from "@/components/Advantages";
 
 async function getHitProducts(): Promise<Product[]> {
-  // Supabase project may not exist yet (no env) — fail soft, render without this section.
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [];
+  // Supabase project may not exist yet (no env) — demo data for design preview.
+  if (isDemoMode()) return demoProducts.filter((p) => p.is_hit).slice(0, 8);
 
   try {
     const supabase = await createServerClient();
@@ -27,7 +28,7 @@ async function getHitProducts(): Promise<Product[]> {
 }
 
 async function getSaleProducts(): Promise<Product[]> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [];
+  if (isDemoMode()) return demoProducts.filter((p) => p.is_sale).slice(0, 8);
 
   try {
     const supabase = await createServerClient();
@@ -45,7 +46,11 @@ async function getSaleProducts(): Promise<Product[]> {
 }
 
 async function getCategoriesWithCounts(): Promise<(Category & { count: number })[]> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [];
+  if (isDemoMode())
+    return demoCategories.map((cat) => ({
+      ...cat,
+      count: demoProducts.filter((p) => p.category_id === cat.id).length,
+    }));
 
   try {
     const supabase = await createServerClient();

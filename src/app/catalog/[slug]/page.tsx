@@ -5,13 +5,14 @@ import { createServerClient } from "@/lib/supabase/server";
 import { fetchProducts, fetchBrands, parseQueryFromSearchParams, buildHref, pluralKey, PAGE_SIZE } from "@/lib/catalog";
 import type { Category } from "@/lib/types";
 import type { SortKey } from "@/lib/catalog";
+import { demoCategories, isDemoMode } from "@/lib/demo";
 import ProductCard from "@/components/ProductCard";
 import Filters from "@/components/Filters";
 import SortSelect from "@/components/SortSelect";
 import Pagination from "@/components/Pagination";
 
 async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
+  if (isDemoMode()) return demoCategories.find((c) => c.slug === slug) ?? null;
 
   try {
     const supabase = await createServerClient();

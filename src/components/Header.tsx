@@ -2,13 +2,14 @@ import Link from "next/link";
 import { getLocale, getT, pick } from "@/lib/i18n";
 import { createServerClient } from "@/lib/supabase/server";
 import type { Category } from "@/lib/types";
+import { demoCategories, isDemoMode } from "@/lib/demo";
 import LangSwitch from "./LangSwitch";
 import CartBadge from "./CartBadge";
 import MobileMenu from "./MobileMenu";
 
 async function getRootCategories(): Promise<Category[]> {
-  // Supabase project may not exist yet (no env) — fail soft, render header without menu.
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [];
+  // Supabase project may not exist yet (no env) — demo data for design preview.
+  if (isDemoMode()) return demoCategories;
 
   try {
     const supabase = await createServerClient();

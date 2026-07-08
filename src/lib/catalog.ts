@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
+import { demoProducts, isDemoMode } from "@/lib/demo";
 import type { Product } from "@/lib/types";
 
 export const PAGE_SIZE = 24;
@@ -27,8 +28,39 @@ function sanitizeSearchTerm(q: string): string {
   return q.replace(/[,()%*]/g, "").replace(/_/g, " ").trim();
 }
 
+/** In-memory filtering over demo data — preview mode only, mirrors the DB query semantics. */
+function fetchProductsDemo(query: ProductQuery): { items: Product[]; total: number } {
+  let items = demoProducts.slice();
+  if (query.categoryId) items = items.filter((p) => p.category_id === query.categoryId);
+  if (query.brands?.length) {
+    const set = new Set(query.brands.map((b) => b.toLowerCase()));
+    items = items.filter((p) => set.has(p.brand.toLowerCase()));
+  }
+  if (query.minPrice != null) items = items.filter((p) => p.price >= query.minPrice!);
+  if (query.maxPrice != null) items = items.filter((p) => p.price <= query.maxPrice!);
+  if (query.inStockOnly) items = items.filter((p) => p.stock_status === "in_stock");
+  const term = query.q ? sanitizeSearchTerm(query.q).toLowerCase() : "";
+  if (term) items = items.filter((p) => (p.name_ua + " " + p.name_ru).toLowerCase().includes(term));
+
+  switch (query.sort) {
+    case "price_asc":
+      items.sort((a, b) => a.price - b.price);
+      break;
+    case "price_desc":
+      items.sort((a, b) => b.price - a.price);
+      break;
+    case "hits":
+      items.sort((a, b) => Number(b.is_hit) - Number(a.is_hit));
+      break;
+  }
+
+  const total = items.length;
+  const page = Math.max(1, query.page);
+  return { items: items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), total };
+}
+
 export async function fetchProducts(query: ProductQuery): Promise<{ items: Product[]; total: number }> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return { items: [], total: 0 };
+  if (isDemoMode()) return fetchProductsDemo(query);
 
   try {
     const supabase = await createServerClient();
@@ -90,7 +122,10 @@ export async function fetchProducts(query: ProductQuery): Promise<{ items: Produ
 
 /** Distinct brands, optionally scoped to a category. Fail-soft -> []. */
 export async function fetchBrands(categoryId?: string): Promise<string[]> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [];
+  if (isDemoMode()) {
+    const scoped = categoryId ? demoProducts.filter((p) => p.category_id === categoryId) : demoProducts;
+    return Array.from(new Set(scoped.map((p) => p.brand))).sort((a, b) => a.localeCompare(b));
+  }
 
   try {
     const supabase = await createServerClient();
