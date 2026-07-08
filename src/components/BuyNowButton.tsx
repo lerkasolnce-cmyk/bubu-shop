@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { addToCart } from "@/lib/cart-storage";
+import { useCart } from "./CartProvider";
 
 export default function BuyNowButton({
   slug,
@@ -13,6 +13,7 @@ export default function BuyNowButton({
   disabled?: boolean;
 }) {
   const router = useRouter();
+  const { add } = useCart();
 
   return (
     <button
@@ -20,7 +21,7 @@ export default function BuyNowButton({
       disabled={disabled}
       onClick={() => {
         if (disabled) return;
-        addToCart(slug);
+        add(slug);
         router.push("/cart");
       }}
       className={

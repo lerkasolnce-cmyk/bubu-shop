@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { addToCart } from "@/lib/cart-storage";
+import { useCart } from "./CartProvider";
 
 export default function AddToCartButton({
   slug,
@@ -12,6 +12,7 @@ export default function AddToCartButton({
   label: string;
   disabled?: boolean;
 }) {
+  const { add } = useCart();
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function AddToCartButton({
       disabled={disabled}
       onClick={() => {
         if (disabled) return;
-        addToCart(slug);
+        add(slug);
         setAdded(true);
       }}
       className={
