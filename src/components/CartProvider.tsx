@@ -14,6 +14,8 @@ type CartContextValue = {
   add: (slug: string, qty?: number) => void;
   remove: (slug: string) => void;
   setQty: (slug: string, qty: number) => void;
+  /** Empties the cart (e.g. after a successful order submission). */
+  clear: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -71,8 +73,10 @@ export default function CartProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const clear = useCallback(() => setItems([]), []);
+
   return (
-    <CartContext.Provider value={{ items, count: cartCount(items), ready, add, remove, setQty }}>
+    <CartContext.Provider value={{ items, count: cartCount(items), ready, add, remove, setQty, clear }}>
       {children}
     </CartContext.Provider>
   );
