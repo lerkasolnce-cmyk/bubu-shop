@@ -18,9 +18,13 @@ export type ProductQuery = {
   page: number; // 1-based
 };
 
-/** Strips characters that would break PostgREST's `.or()` filter syntax. */
+/**
+ * Strips characters that would break PostgREST's `.or()` filter syntax (`, ( )`)
+ * or act as ilike wildcards: `%`, `*` (PostgREST alias for `%`) are removed,
+ * `_` (single-char wildcard) is replaced with a space so terms still match.
+ */
 function sanitizeSearchTerm(q: string): string {
-  return q.replace(/[,()%]/g, "").trim();
+  return q.replace(/[,()%*]/g, "").replace(/_/g, " ").trim();
 }
 
 export async function fetchProducts(query: ProductQuery): Promise<{ items: Product[]; total: number }> {
@@ -73,9 +77,13 @@ export async function fetchProducts(query: ProductQuery): Promise<{ items: Produ
     builder = builder.range(from, to);
 
     const { data, error, count } = await builder;
-    if (error || !data) return { items: [], total: 0 };
+    if (error || !data) {
+      if (error) console.error("fetchProducts:", error.message);
+      return { items: [], total: 0 };
+    }
     return { items: data as Product[], total: count ?? 0 };
-  } catch {
+  } catch (e) {
+    console.error("fetchProducts:", e);
     return { items: [], total: 0 };
   }
 }
@@ -90,14 +98,18 @@ export async function fetchBrands(categoryId?: string): Promise<string[]> {
     if (categoryId) builder = builder.eq("category_id", categoryId);
 
     const { data, error } = await builder;
-    if (error || !data) return [];
+    if (error || !data) {
+      if (error) console.error("fetchBrands:", error.message);
+      return [];
+    }
 
     const brands = new Set<string>();
     for (const row of data as { brand: string }[]) {
       if (row.brand) brands.add(row.brand);
     }
     return Array.from(brands).sort((a, b) => a.localeCompare(b));
-  } catch {
+  } catch (e) {
+    console.error("fetchBrands:", e);
     return [];
   }
 }
