@@ -8,6 +8,13 @@ import type { OrderItem, PaymentStatus, Product } from "@/lib/types";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+// Module scope → warns once per server process, not per request.
+if (!process.env.NEXT_PUBLIC_SITE_URL && process.env.NODE_ENV !== "development") {
+  console.warn(
+    "POST /api/orders: NEXT_PUBLIC_SITE_URL is not set — mono redirect/webhook URLs will point at localhost"
+  );
+}
+
 /**
  * POST /api/orders — creates an order and (in real mode) notifies Telegram.
  * Error responses carry machine codes ({error: 'invalid'|'unknown_product'|
@@ -126,12 +133,23 @@ export async function POST(request: NextRequest) {
 
     if (invoice) {
       payUrl = invoice.pageUrl;
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update({ mono_invoice_id: invoice.invoiceId })
-        .eq("id", order.id);
+      // If this update is lost, the customer can still pay but the webhook
+      // will never match the order (it looks up by mono_invoice_id) — so
+      // retry once; if the retry also fails, log BOTH ids prominently so
+      // staff can reconcile manually via merchantPaymInfo.reference (= orderId).
+      const saveInvoiceId = () =>
+        supabase.from("orders").update({ mono_invoice_id: invoice.invoiceId }).eq("id", order.id);
+
+      let { error: updateError } = await saveInvoiceId();
       if (updateError) {
-        console.error("POST /api/orders: failed to save mono_invoice_id", updateError.message);
+        console.error("POST /api/orders: failed to save mono_invoice_id, retrying", updateError.message);
+        ({ error: updateError } = await saveInvoiceId());
+      }
+      if (updateError) {
+        console.error(
+          `POST /api/orders: RECONCILE MANUALLY — mono_invoice_id not saved after retry. orderId=${order.id} invoiceId=${invoice.invoiceId}`,
+          updateError.message
+        );
       }
     }
     // invoice === null: monobank unavailable/misconfigured — payUrl stays null,

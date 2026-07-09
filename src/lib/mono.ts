@@ -54,6 +54,9 @@ export async function createInvoice(opts: CreateInvoiceOptions): Promise<CreateI
         webHookUrl: opts.webhookUrl,
         validity: INVOICE_VALIDITY_SECONDS,
       }),
+      // A hung monobank API must not hang POST /api/orders: abort after 8s →
+      // caught by the try/catch below → null → checkout falls back gracefully.
+      signal: AbortSignal.timeout(8000),
     });
 
     if (!res.ok) {
