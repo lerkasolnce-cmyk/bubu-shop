@@ -1,6 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { demoProducts, isDemoMode } from "@/lib/demo";
-import type { Product } from "@/lib/types";
+import { demoCategories, demoProducts, isDemoMode } from "@/lib/demo";
+import type { Category, Product } from "@/lib/types";
 
 export const PAGE_SIZE = 24;
 
@@ -24,7 +24,7 @@ export type ProductQuery = {
  * or act as ilike wildcards: `%`, `*` (PostgREST alias for `%`) are removed,
  * `_` (single-char wildcard) is replaced with a space so terms still match.
  */
-function sanitizeSearchTerm(q: string): string {
+export function sanitizeSearchTerm(q: string): string {
   return q.replace(/[,()%*]/g, "").replace(/_/g, " ").trim();
 }
 
@@ -145,6 +145,24 @@ export async function fetchBrands(categoryId?: string): Promise<string[]> {
     return Array.from(brands).sort((a, b) => a.localeCompare(b));
   } catch (e) {
     console.error("fetchBrands:", e);
+    return [];
+  }
+}
+
+/** All categories ordered by `sort`, used by the admin category filter/select. Fail-soft -> []. */
+export async function fetchCategories(): Promise<Category[]> {
+  if (isDemoMode()) return demoCategories;
+
+  try {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase.from("categories").select("*").order("sort", { ascending: true });
+    if (error || !data) {
+      if (error) console.error("fetchCategories:", error.message);
+      return [];
+    }
+    return data as Category[];
+  } catch (e) {
+    console.error("fetchCategories:", e);
     return [];
   }
 }
