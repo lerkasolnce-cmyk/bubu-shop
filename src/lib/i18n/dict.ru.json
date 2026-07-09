@@ -61,6 +61,8 @@
   "checkout.errorRequired": "Обязательное поле",
   "checkout.errorPhone": "Введите номер в формате +380XXXXXXXXX",
   "checkout.errorSubmit": "Не удалось оформить заказ. Попробуйте ещё раз.",
+  "checkout.errorOutOfStock": "Один из товаров в корзине закончился. Обновите корзину и попробуйте ещё раз.",
+  "checkout.errorUnknownProduct": "Один из товаров в корзине больше недоступен. Обновите корзину и попробуйте ещё раз.",
   "order.thanksTitle": "Спасибо за заказ!",
   "order.thanksNumber": "Заказ",
   "order.thanksText": "Мы свяжемся с вами в ближайшее время для подтверждения.",

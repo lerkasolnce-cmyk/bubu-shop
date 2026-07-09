@@ -5,21 +5,23 @@ import { orderSchema } from "@/lib/order-schema";
 import { sendOrderNotification } from "@/lib/telegram";
 import type { OrderItem, PaymentStatus, Product } from "@/lib/types";
 
-/** POST /api/orders — creates an order and (in real mode) notifies Telegram. */
+/**
+ * POST /api/orders — creates an order and (in real mode) notifies Telegram.
+ * Error responses carry machine codes ({error: 'invalid'|'unknown_product'|
+ * 'out_of_stock'|'internal', slug?}) — the client maps them to localized copy,
+ * so no user-facing prose lives here.
+ */
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
   const parsed = orderSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
   const { customer, items, paymentMethod } = parsed.data;
@@ -33,10 +35,10 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const product = bySlug.get(item.slug);
       if (!product) {
-        return NextResponse.json({ error: `Unknown product: ${item.slug}` }, { status: 400 });
+        return NextResponse.json({ error: "unknown_product", slug: item.slug }, { status: 400 });
       }
       if (product.stock_status === "out_of_stock") {
-        return NextResponse.json({ error: `Out of stock: ${item.slug}` }, { status: 400 });
+        return NextResponse.json({ error: "out_of_stock", slug: item.slug }, { status: 400 });
       }
     }
 
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
 
   if (productsError || !products) {
     console.error("POST /api/orders: failed to load products", productsError?.message);
-    return NextResponse.json({ error: "Failed to load products" }, { status: 500 });
+    return NextResponse.json({ error: "internal" }, { status: 500 });
   }
 
   const bySlug = new Map((products as Product[]).map((p) => [p.slug, p]));
@@ -62,10 +64,10 @@ export async function POST(request: NextRequest) {
   for (const item of items) {
     const product = bySlug.get(item.slug);
     if (!product) {
-      return NextResponse.json({ error: `Unknown product: ${item.slug}` }, { status: 400 });
+      return NextResponse.json({ error: "unknown_product", slug: item.slug }, { status: 400 });
     }
     if (product.stock_status === "out_of_stock") {
-      return NextResponse.json({ error: `Out of stock: ${item.slug}` }, { status: 400 });
+      return NextResponse.json({ error: "out_of_stock", slug: item.slug }, { status: 400 });
     }
     // Total is always recomputed server-side from DB prices — never trust the client.
     total += product.price * item.qty;
@@ -93,7 +95,7 @@ export async function POST(request: NextRequest) {
 
   if (insertError || !order) {
     console.error("POST /api/orders: insert failed", insertError?.message);
-    return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+    return NextResponse.json({ error: "internal" }, { status: 500 });
   }
 
   // Never throws — a failed Telegram notification must not fail the order.

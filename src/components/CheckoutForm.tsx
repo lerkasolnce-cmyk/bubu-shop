@@ -30,6 +30,8 @@ export type CheckoutLabels = {
   errorRequired: string;
   errorPhone: string;
   errorSubmit: string;
+  errorOutOfStock: string;
+  errorUnknownProduct: string;
 };
 
 type FieldErrors = Partial<Record<"name" | "phone" | "city", string>>;
@@ -145,7 +147,14 @@ export default function CheckoutForm({ locale, labels }: { locale: Locale; label
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data) {
-        setSubmitError((data && typeof data.error === "string" && data.error) || labels.errorSubmit);
+        // The API returns machine codes, never user-facing prose — map known
+        // codes to localized copy; anything unmapped falls back to the generic error.
+        const code = data && typeof data.error === "string" ? data.error : "";
+        const codeLabels: Record<string, string> = {
+          out_of_stock: labels.errorOutOfStock,
+          unknown_product: labels.errorUnknownProduct,
+        };
+        setSubmitError(codeLabels[code] ?? labels.errorSubmit);
         setPending(false);
         return;
       }

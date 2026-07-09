@@ -61,6 +61,8 @@
   "checkout.errorRequired": "Обов'язкове поле",
   "checkout.errorPhone": "Введіть номер у форматі +380XXXXXXXXX",
   "checkout.errorSubmit": "Не вдалося оформити замовлення. Спробуйте ще раз.",
+  "checkout.errorOutOfStock": "Один з товарів у кошику закінчився. Оновіть кошик і спробуйте ще раз.",
+  "checkout.errorUnknownProduct": "Один з товарів у кошику більше недоступний. Оновіть кошик і спробуйте ще раз.",
   "order.thanksTitle": "Дякуємо за замовлення!",
   "order.thanksNumber": "Замовлення",
   "order.thanksText": "Ми зв'яжемося з вами найближчим часом для підтвердження.",

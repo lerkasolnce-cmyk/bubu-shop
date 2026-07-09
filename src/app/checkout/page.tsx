@@ -24,6 +24,8 @@ export default async function CheckoutPage() {
     errorRequired: t("checkout.errorRequired"),
     errorPhone: t("checkout.errorPhone"),
     errorSubmit: t("checkout.errorSubmit"),
+    errorOutOfStock: t("checkout.errorOutOfStock"),
+    errorUnknownProduct: t("checkout.errorUnknownProduct"),
   };
 
   return (
