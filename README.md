@@ -41,7 +41,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
    SUPABASE_SERVICE_ROLE_KEY=xxxxx
    ```
    `SUPABASE_SERVICE_ROLE_KEY` — секретний ключ, ніколи не використовується в клієнтському коді і не потрапляє в git (`.env.local` вже в `.gitignore`).
-5. У **Authentication → Users** створіть адмін-користувача (email/пароль) — під ним адмінка (Task 10+) буде заходити в панель керування.
+5. У **Authentication → Users** створіть адмін-користувача (email/пароль) вручну — під ним заходьте в адмін-панель: `/admin/login` (без сесії всі `/admin/*` редіректять на логін).
 6. Заповніть базу тестовими товарами:
    ```
    npx tsx scripts/seed.ts
