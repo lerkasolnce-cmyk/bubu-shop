@@ -3,7 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { demoProducts, isDemoMode } from "@/lib/demo";
 import { orderSchema } from "@/lib/order-schema";
 import { sendOrderNotification } from "@/lib/telegram";
+import { createInvoice } from "@/lib/mono";
 import type { OrderItem, PaymentStatus, Product } from "@/lib/types";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 /**
  * POST /api/orders — creates an order and (in real mode) notifies Telegram.
@@ -111,9 +114,30 @@ export async function POST(request: NextRequest) {
     paymentMethod,
   });
 
-  // TODO(Task 9): create a real Monobank invoice for paymentMethod === 'mono'
-  // and return its payUrl here; for now checkout falls back to the thanks page.
-  const payUrl: string | null = null;
+  let payUrl: string | null = null;
+
+  if (paymentMethod === "mono") {
+    const invoice = await createInvoice({
+      amountUah: total,
+      orderId: order.id,
+      redirectUrl: `${SITE_URL}/order/${order.id}/thanks`,
+      webhookUrl: `${SITE_URL}/api/mono-webhook`,
+    });
+
+    if (invoice) {
+      payUrl = invoice.pageUrl;
+      const { error: updateError } = await supabase
+        .from("orders")
+        .update({ mono_invoice_id: invoice.invoiceId })
+        .eq("id", order.id);
+      if (updateError) {
+        console.error("POST /api/orders: failed to save mono_invoice_id", updateError.message);
+      }
+    }
+    // invoice === null: monobank unavailable/misconfigured — payUrl stays null,
+    // the client falls back to the thanks page, and the order stays 'pending'
+    // for manual follow-up (see task brief).
+  }
 
   return NextResponse.json({ orderId: order.id, payUrl });
 }
