@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import type { ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
-import type { OrderStatus } from "@/lib/types";
+import { ORDER_STATUSES, type OrderStatus } from "@/lib/types";
 import { updateOrderStatus } from "@/app/admin/(protected)/orders/actions";
 
 export type OrderStatusLabels = {
@@ -14,8 +14,6 @@ export type OrderStatusLabels = {
   cancelled: string;
   updateError: string;
 };
-
-const STATUSES: OrderStatus[] = ["new", "confirmed", "shipped", "done", "cancelled"];
 
 export default function OrderStatusSelect({
   id,
@@ -58,7 +56,7 @@ export default function OrderStatusSelect({
         disabled={pending}
         className="rounded-md border border-ink/15 bg-white px-2 py-1 text-xs font-semibold text-ink focus:border-mint focus:outline-none disabled:opacity-50"
       >
-        {STATUSES.map((s) => (
+        {ORDER_STATUSES.map((s) => (
           <option key={s} value={s}>
             {labels[s]}
           </option>

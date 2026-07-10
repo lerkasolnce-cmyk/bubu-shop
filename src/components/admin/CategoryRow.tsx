@@ -22,6 +22,7 @@ export type CategoryLabels = {
   saveError: string;
   hasProducts: string; // contains a literal "{count}" placeholder
   hasChildren: string;
+  invalidParent: string;
   empty: string;
 };
 
@@ -62,7 +63,7 @@ export default function CategoryRow({
       if (!res.ok || !res.id) {
         // res.error may carry a raw Postgres message/code — log it, show only the localized label.
         console.error("saveCategory:", res.error);
-        setError(labels.saveError);
+        setError(res.error === "invalid_parent" ? labels.invalidParent : labels.saveError);
         return;
       }
       onSaved({

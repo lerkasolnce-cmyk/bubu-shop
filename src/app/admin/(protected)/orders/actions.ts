@@ -3,8 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
-
-const ORDER_STATUSES = ["new", "confirmed", "shipped", "done", "cancelled"] as const;
+import { ORDER_STATUSES } from "@/lib/types";
 
 // orders.id is a bigint identity, NOT a uuid — coerce+int, never z.uuid() here.
 const updateStatusSchema = z.object({

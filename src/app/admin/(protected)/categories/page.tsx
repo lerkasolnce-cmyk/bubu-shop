@@ -23,6 +23,7 @@ export default async function AdminCategoriesPage() {
     saveError: t("admin.categories.saveError"),
     hasProducts: t("admin.categories.hasProducts"),
     hasChildren: t("admin.categories.hasChildren"),
+    invalidParent: t("admin.categories.invalidParent"),
     empty: t("admin.categories.empty"),
   };
 

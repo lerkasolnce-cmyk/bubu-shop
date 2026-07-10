@@ -2,7 +2,8 @@ export type StockStatus = "in_stock" | "preorder" | "out_of_stock";
 
 export type PaymentMethod = "mono" | "cod";
 export type PaymentStatus = "pending" | "paid" | "failed" | "n/a";
-export type OrderStatus = "new" | "confirmed" | "shipped" | "done" | "cancelled";
+export const ORDER_STATUSES = ["new", "confirmed", "shipped", "done", "cancelled"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export interface Category {
   id: string;

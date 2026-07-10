@@ -54,6 +54,37 @@ export async function saveCategory(formData: FormData): Promise<SaveCategoryResu
     return { ok: false, error: "self_parent" };
   }
 
+  // Server-side enforcement of the 2-level hierarchy — the UI only offers root
+  // categories as parent options, but a forged POST could bypass that.
+  if (v.parent_id) {
+    const { data: parent, error: parentError } = await supabase
+      .from("categories")
+      .select("id, parent_id")
+      .eq("id", v.parent_id)
+      .maybeSingle<{ id: string; parent_id: string | null }>();
+    if (parentError) {
+      console.error("saveCategory: parent lookup failed", parentError.message);
+      return { ok: false, error: "unknown" };
+    }
+    if (!parent) return { ok: false, error: "invalid" };
+    // Parent is itself a child — nesting under it would create level 3.
+    if (parent.parent_id !== null) return { ok: false, error: "invalid_parent" };
+
+    // Updating a category that has children: giving it a parent would push
+    // its children down to level 3.
+    if (v.id) {
+      const { count: childCount, error: childrenError } = await supabase
+        .from("categories")
+        .select("*", { count: "exact", head: true })
+        .eq("parent_id", v.id);
+      if (childrenError) {
+        console.error("saveCategory: children count failed", childrenError.message);
+        return { ok: false, error: "unknown" };
+      }
+      if ((childCount ?? 0) > 0) return { ok: false, error: "invalid_parent" };
+    }
+  }
+
   const payload = {
     name_ua: v.name_ua,
     name_ru: v.name_ru,

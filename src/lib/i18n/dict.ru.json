@@ -164,6 +164,7 @@
   "admin.categories.saveError": "Не удалось сохранить категорию",
   "admin.categories.hasProducts": "Нельзя удалить: {count} товаров",
   "admin.categories.hasChildren": "Нельзя удалить: есть подкатегории",
+  "admin.categories.invalidParent": "Допускается только два уровня категорий",
   "admin.categories.empty": "Категорий пока нет",
   "admin.orders.tabAll": "Все",
   "admin.orders.tabNew": "Новые",

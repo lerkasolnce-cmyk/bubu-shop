@@ -4,6 +4,7 @@ import { getLocale, getT } from "@/lib/i18n";
 import { createServerClient } from "@/lib/supabase/server";
 import { isDemoMode } from "@/lib/demo";
 import type { Order } from "@/lib/types";
+import { formatDateTime } from "@/lib/format";
 import OrderStatusSelect, { type OrderStatusLabels } from "@/components/admin/OrderStatusSelect";
 
 // orders.id is a bigint identity, NOT a uuid — coerce+int, never z.uuid() here.
@@ -20,12 +21,6 @@ async function loadOrder(id: number): Promise<Order | null> {
   } catch {
     return null;
   }
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -60,7 +55,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <h1 className="text-2xl font-extrabold text-ink">
             {t("admin.orders.orderTitle")} #{order.id}
           </h1>
-          <p className="text-sm text-ink/50">{formatDate(order.created_at)}</p>
+          <p className="text-sm text-ink/50">{formatDateTime(order.created_at)}</p>
         </div>
         <OrderStatusSelect id={order.id} status={order.order_status} labels={statusLabels} />
       </div>

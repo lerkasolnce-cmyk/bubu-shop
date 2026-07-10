@@ -2,12 +2,12 @@ import Link from "next/link";
 import { getLocale, getT } from "@/lib/i18n";
 import { createServerClient } from "@/lib/supabase/server";
 import { isDemoMode } from "@/lib/demo";
-import type { Order, OrderStatus } from "@/lib/types";
+import { ORDER_STATUSES, type Order, type OrderStatus } from "@/lib/types";
+import { formatDateTime } from "@/lib/format";
 import Pagination from "@/components/Pagination";
 import OrderStatusSelect, { type OrderStatusLabels } from "@/components/admin/OrderStatusSelect";
 
 const PAGE_SIZE = 50;
-const STATUSES: OrderStatus[] = ["new", "confirmed", "shipped", "done", "cancelled"];
 
 const PAYMENT_BADGE: Record<Order["payment_status"], string> = {
   paid: "bg-mint/50 text-ink",
@@ -18,12 +18,6 @@ const PAYMENT_BADGE: Record<Order["payment_status"], string> = {
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 async function loadOrders(status: OrderStatus | undefined, page: number): Promise<{ items: Order[]; total: number }> {
@@ -60,7 +54,7 @@ export default async function AdminOrdersPage({
   const t = getT(await getLocale());
 
   const statusRaw = firstParam(sp.status);
-  const status = (STATUSES as string[]).includes(statusRaw ?? "") ? (statusRaw as OrderStatus) : undefined;
+  const status = (ORDER_STATUSES as readonly string[]).includes(statusRaw ?? "") ? (statusRaw as OrderStatus) : undefined;
   const pageRaw = firstParam(sp.page);
   const pageNum = pageRaw ? parseInt(pageRaw, 10) : 1;
   const page = Number.isFinite(pageNum) && pageNum > 0 ? pageNum : 1;
@@ -141,7 +135,7 @@ export default async function AdminOrdersPage({
               {items.map((o) => (
                 <tr key={o.id} className="border-b border-blush/20 last:border-0">
                   <td className="px-3 py-2 font-semibold text-ink">#{o.id}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-ink/70">{formatDate(o.created_at)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-ink/70">{formatDateTime(o.created_at)}</td>
                   <td className="px-3 py-2 text-ink">{o.name}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <a href={`tel:${o.phone}`} className="text-ink/70 hover:text-ink hover:underline">

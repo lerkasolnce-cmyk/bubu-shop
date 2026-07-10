@@ -164,6 +164,7 @@
   "admin.categories.saveError": "Не вдалося зберегти категорію",
   "admin.categories.hasProducts": "Не можна видалити: {count} товарів",
   "admin.categories.hasChildren": "Не можна видалити: є підкатегорії",
+  "admin.categories.invalidParent": "Допускається лише два рівні категорій",
   "admin.categories.empty": "Категорій ще немає",
   "admin.orders.tabAll": "Всі",
   "admin.orders.tabNew": "Нові",
