@@ -11,9 +11,21 @@ const nunito = Nunito({
   subsets: ["latin", "cyrillic"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const DEFAULT_DESCRIPTION = "bu-bu — інтернет-магазин дитячих колясок в Одесі: Anex, Cybex, Espiro. Доставка Новою Поштою по Україні.";
+
 export const metadata: Metadata = {
-  title: "bu-bu",
-  description: "bu-bu — интернет-магазин детских колясок",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    template: "%s — bu-bu",
+    default: "bu-bu — інтернет-магазин дитячих колясок",
+  },
+  description: DEFAULT_DESCRIPTION,
+  openGraph: {
+    siteName: "bu-bu",
+    type: "website",
+    description: DEFAULT_DESCRIPTION,
+  },
 };
 
 export default async function RootLayout({

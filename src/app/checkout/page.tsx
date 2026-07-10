@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { getLocale, getT } from "@/lib/i18n";
 import CheckoutForm from "@/components/CheckoutForm";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const t = getT(locale);
+  return { title: t("checkout.title") };
+}
 
 export default async function CheckoutPage() {
   const locale = await getLocale();

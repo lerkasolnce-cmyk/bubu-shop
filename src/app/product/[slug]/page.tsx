@@ -68,7 +68,7 @@ export async function generateMetadata({
   const description = pick(product, "description", locale).slice(0, 150);
 
   return {
-    title: `«${name} — bu-bu»`,
+    title: name,
     description,
   };
 }

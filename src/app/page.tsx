@@ -7,6 +7,7 @@ import CategoryGrid from "@/components/CategoryGrid";
 import ProductRow from "@/components/ProductRow";
 import BrandStrip from "@/components/BrandStrip";
 import Advantages from "@/components/Advantages";
+import Reveal from "@/components/Reveal";
 
 async function getHitProducts(): Promise<Product[]> {
   // Supabase project may not exist yet (no env) — demo data for design preview.
@@ -98,11 +99,21 @@ export default async function Home() {
   return (
     <div className="flex flex-col gap-12 pb-12">
       <Hero t={t} />
-      <CategoryGrid categories={categoryCards} t={t} />
-      <ProductRow title={t("home.hits")} products={hits} locale={locale} t={t} />
-      <ProductRow title={t("home.sale")} products={sale} locale={locale} t={t} />
-      <BrandStrip />
-      <Advantages t={t} />
+      <Reveal>
+        <CategoryGrid categories={categoryCards} t={t} />
+      </Reveal>
+      <Reveal delay={80}>
+        <ProductRow title={t("home.hits")} products={hits} locale={locale} t={t} />
+      </Reveal>
+      <Reveal delay={80}>
+        <ProductRow title={t("home.sale")} products={sale} locale={locale} t={t} />
+      </Reveal>
+      <Reveal delay={120}>
+        <BrandStrip />
+      </Reveal>
+      <Reveal delay={160}>
+        <Advantages t={t} />
+      </Reveal>
     </div>
   );
 }

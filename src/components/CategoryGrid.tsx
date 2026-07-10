@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Reveal from "./Reveal";
 
 type CategoryCard = { slug: string; name: string; count: number };
 
@@ -87,20 +88,21 @@ export default function CategoryGrid({
   return (
     <section className="mx-auto w-full max-w-6xl px-4">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {categories.map((cat) => (
-          <Link
-            key={cat.slug}
-            href={`/catalog/${cat.slug}`}
-            className="flex flex-col items-center gap-2 rounded-lg border border-blush/40 bg-white p-4 text-center transition hover:shadow-md"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-mint/40 text-ink">
-              <CategoryIcon slug={cat.slug} />
-            </span>
-            <span className="text-sm font-semibold text-ink">{cat.name}</span>
-            <span className="text-xs text-ink/50">
-              {cat.count} {t(`category.products${pluralKey(cat.count)}`)}
-            </span>
-          </Link>
+        {categories.map((cat, i) => (
+          <Reveal key={cat.slug} delay={i * 60} className="h-full">
+            <Link
+              href={`/catalog/${cat.slug}`}
+              className="flex h-full flex-col items-center gap-2 rounded-lg border border-blush/40 bg-white p-4 text-center transition hover:shadow-md"
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-mint/40 text-ink">
+                <CategoryIcon slug={cat.slug} />
+              </span>
+              <span className="text-sm font-semibold text-ink">{cat.name}</span>
+              <span className="text-xs text-ink/50">
+                {cat.count} {t(`category.products${pluralKey(cat.count)}`)}
+              </span>
+            </Link>
+          </Reveal>
         ))}
       </div>
     </section>

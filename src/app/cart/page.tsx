@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { getLocale, getT } from "@/lib/i18n";
 import CartView from "@/components/CartView";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const t = getT(locale);
+  return { title: t("cart.title") };
+}
 
 export default async function CartPage() {
   const locale = await getLocale();

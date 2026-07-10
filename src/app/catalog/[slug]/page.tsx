@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getLocale, getT, pick } from "@/lib/i18n";
 import { createServerClient } from "@/lib/supabase/server";
 import { fetchProducts, fetchBrands, parseQueryFromSearchParams, buildHref, pluralKey, PAGE_SIZE } from "@/lib/catalog";
@@ -26,6 +27,19 @@ async function getCategoryBySlug(slug: string): Promise<Category | null> {
 
 function humanizeSlug(slug: string): string {
   return slug.replace(/-/g, " ");
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const category = await getCategoryBySlug(slug);
+  const locale = await getLocale();
+  const title = category ? pick(category, "name", locale) : humanizeSlug(slug);
+
+  return { title };
 }
 
 export default async function CategoryPage({

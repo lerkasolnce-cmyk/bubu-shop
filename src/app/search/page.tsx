@@ -1,9 +1,23 @@
+import type { Metadata } from "next";
 import { getLocale, getT } from "@/lib/i18n";
 import { fetchProducts, parseQueryFromSearchParams, buildHref, pluralKey, PAGE_SIZE } from "@/lib/catalog";
 import type { SortKey } from "@/lib/catalog";
 import ProductCard from "@/components/ProductCard";
 import SortSelect from "@/components/SortSelect";
 import Pagination from "@/components/Pagination";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const locale = await getLocale();
+  const t = getT(locale);
+  const q = typeof sp.q === "string" ? sp.q.trim() : undefined;
+
+  return { title: q ? `${t("search.resultsFor")}: ${q}` : t("search.title") };
+}
 
 export default async function SearchPage({
   searchParams,
