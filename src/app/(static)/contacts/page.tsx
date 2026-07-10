@@ -10,9 +10,25 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/**
+ * Derives a tel: href from the display phone in the dict, so the link can never
+ * drift from the visible number. Returns null while the dict still holds the
+ * `+380 __ ___ __ __` placeholder (underscores / too few digits) — the phone
+ * then renders as plain text without a broken tel: link.
+ */
+function telHref(displayPhone: string): string | null {
+  if (displayPhone.includes("_")) return null;
+  const compact = displayPhone.replace(/[\s()-]/g, "");
+  const digits = compact.replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  return `tel:${compact}`;
+}
+
 export default async function ContactsPage() {
   const locale = await getLocale();
   const t = getT(locale);
+  const phone = t("header.phone");
+  const phoneHref = telHref(phone);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10">
@@ -24,9 +40,13 @@ export default async function ContactsPage() {
           <h2 className="text-xs font-semibold uppercase tracking-wide text-ink/50">
             {t("static.contacts.phoneTitle")}
           </h2>
-          <a href="tel:+380000000000" className="mt-2 block text-lg font-bold text-ink hover:text-accent">
-            {t("header.phone")}
-          </a>
+          {phoneHref ? (
+            <a href={phoneHref} className="mt-2 block text-lg font-bold text-ink hover:text-accent">
+              {phone}
+            </a>
+          ) : (
+            <p className="mt-2 text-lg font-bold text-ink">{phone}</p>
+          )}
         </div>
 
         <div className="rounded-lg border border-blush/40 bg-white p-5 text-center">

@@ -99,9 +99,9 @@ export default async function Home() {
   return (
     <div className="flex flex-col gap-12 pb-12">
       <Hero t={t} />
-      <Reveal>
-        <CategoryGrid categories={categoryCards} t={t} />
-      </Reveal>
+      {/* CategoryGrid staggers its own cards with per-card <Reveal> — no outer wrapper here,
+          nesting would compound transforms (~32px) and double-observe every card. */}
+      <CategoryGrid categories={categoryCards} t={t} />
       <Reveal delay={80}>
         <ProductRow title={t("home.hits")} products={hits} locale={locale} t={t} />
       </Reveal>
