@@ -10,8 +10,14 @@ const STOCK_STATUSES = ["in_stock", "preorder", "out_of_stock"] as const;
 // (Number("") === 0) instead of failing validation on a blank required/optional field.
 const emptyToUndefined = (v: unknown) => (v === "" || v == null ? undefined : v);
 
+// Shape of the hidden-input JSON payloads after JSON.parse — forged FormData could
+// otherwise smuggle non-string arrays/objects into jsonb/text[] columns (a non-string
+// in images[] would later crash the list page inside next/image).
+const specsShape = z.record(z.string(), z.string());
+const imagesShape = z.array(z.string());
+
 const productSchema = z.object({
-  id: z.string().trim().optional(),
+  id: z.uuid().optional(),
   name_ua: z.string().trim().min(1),
   name_ru: z.string().trim().min(1),
   slug: z.string().trim().optional(),
@@ -80,19 +86,29 @@ export async function saveProduct(formData: FormData): Promise<SaveProductResult
   }
   const v = parsed.data;
 
-  let specs: Record<string, string>;
+  let specsRaw: unknown;
   try {
-    specs = JSON.parse(v.specs);
+    specsRaw = JSON.parse(v.specs);
   } catch {
-    return { ok: false, error: "invalid specs" };
+    return { ok: false, error: "validation", fieldErrors: { specs: ["invalid JSON"] } };
   }
+  const specsParsed = specsShape.safeParse(specsRaw);
+  if (!specsParsed.success) {
+    return { ok: false, error: "validation", fieldErrors: { specs: ["invalid shape"] } };
+  }
+  const specs = specsParsed.data;
 
-  let images: string[];
+  let imagesRaw: unknown;
   try {
-    images = JSON.parse(v.images);
+    imagesRaw = JSON.parse(v.images);
   } catch {
-    return { ok: false, error: "invalid images" };
+    return { ok: false, error: "validation", fieldErrors: { images: ["invalid JSON"] } };
   }
+  const imagesParsed = imagesShape.safeParse(imagesRaw);
+  if (!imagesParsed.success) {
+    return { ok: false, error: "validation", fieldErrors: { images: ["invalid shape"] } };
+  }
+  const images = imagesParsed.data;
 
   const baseSlug = v.slug && v.slug.length > 0 ? transliterate(v.slug) : transliterate(v.name_ua);
   const slugCandidate = baseSlug || "product";
@@ -142,8 +158,24 @@ export async function saveProduct(formData: FormData): Promise<SaveProductResult
   return { ok: false, error: "slug conflict" };
 }
 
+/** Recovers a storage object path from a Supabase public URL; null for foreign/unparseable URLs. */
+function storagePathFromPublicUrl(publicUrl: string): string | null {
+  const marker = "/object/public/products/";
+  const idx = publicUrl.indexOf(marker);
+  if (idx === -1) return null;
+  try {
+    const path = decodeURIComponent(publicUrl.slice(idx + marker.length).split("?")[0]);
+    return path || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Deletes a product row and best-effort removes its Storage files (products/<slug>/*).
+ * Deletes a product row and best-effort removes its Storage files: first the exact
+ * paths derived from images[] URLs (covers uploads outside the slug/ prefix — e.g.
+ * new-product photos land in misc/ because the slug doesn't exist at upload time),
+ * then a sweep of the products/<slug>/ prefix as a secondary net.
  * Auth is re-checked here for the same reason as saveProduct.
  */
 export async function deleteProduct(id: string): Promise<DeleteProductResult> {
@@ -153,20 +185,34 @@ export async function deleteProduct(id: string): Promise<DeleteProductResult> {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "unauthorized" };
 
-  const { data: product } = await supabase.from("products").select("slug").eq("id", id).maybeSingle();
+  if (!z.uuid().safeParse(id).success) return { ok: false, error: "invalid id" };
+
+  const { data: product } = await supabase
+    .from("products")
+    .select("slug, images")
+    .eq("id", id)
+    .maybeSingle<{ slug: string; images: string[] | null }>();
 
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
 
-  if (product?.slug) {
-    try {
+  try {
+    const exactPaths = (product?.images ?? [])
+      .filter((url): url is string => typeof url === "string")
+      .map(storagePathFromPublicUrl)
+      .filter((p): p is string => p !== null);
+    if (exactPaths.length > 0) {
+      await supabase.storage.from("products").remove(exactPaths);
+    }
+
+    if (product?.slug) {
       const { data: files } = await supabase.storage.from("products").list(product.slug);
       if (files && files.length > 0) {
         await supabase.storage.from("products").remove(files.map((f) => `${product.slug}/${f.name}`));
       }
-    } catch {
-      // Storage cleanup is best-effort — the row is already gone either way.
     }
+  } catch {
+    // Storage cleanup is best-effort — the row is already gone either way.
   }
 
   revalidatePath("/admin/products");

@@ -25,7 +25,9 @@ export default function DeleteProductButton({
     startTransition(async () => {
       const res = await deleteProduct(id);
       if (!res.ok) {
-        setError(res.error ?? errorLabel);
+        // res.error may carry a raw Postgres message — log it, show only the localized label.
+        console.error("deleteProduct:", res.error);
+        setError(errorLabel);
         return;
       }
       router.refresh();
