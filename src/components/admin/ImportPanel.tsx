@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { parseProductsCsv, type ProductCsvRow } from "@/lib/csv";
-import { importProducts, exportProducts, type ImportResult } from "@/app/admin/(protected)/import/actions";
+import {
+  importProducts,
+  exportProducts,
+  type ImportResult,
+  type SkippedRow,
+} from "@/app/admin/(protected)/import/actions";
 
 export type ImportPanelLabels = {
   demoNotice: string;
@@ -21,6 +26,7 @@ export type ImportPanelLabels = {
   stockOutOfStock: string;
   importButton: string; // contains a literal "{count}" placeholder
   importing: string;
+  progress: string; // contains literal "{done}" and "{total}" placeholders
   exportButton: string;
   exporting: string;
   resultTitle: string;
@@ -35,6 +41,11 @@ export type ImportPanelLabels = {
 };
 
 const PREVIEW_ROWS = 20;
+
+// Rows per importProducts() call. The whole file in one Server Action call would blow
+// Next's default 1MB request body limit on a real 2-3k-row catalog, so the client
+// sends sequential chunks and aggregates the results.
+const IMPORT_CHUNK = 300;
 
 function todayStr(): string {
   const d = new Date();
@@ -70,6 +81,7 @@ export default function ImportPanel({ labels, demoMode }: { labels: ImportPanelL
   const [importPending, startImport] = useTransition();
   const [exportPending, startExport] = useTransition();
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -91,27 +103,58 @@ export default function ImportPanel({ labels, demoMode }: { labels: ImportPanelL
     setError(null);
     setResult(null);
     startImport(async () => {
-      const res = await importProducts(parsed.rows);
-      if (!res.ok) {
-        // res.error may carry a raw/internal code — don't surface it verbatim to the UI.
-        console.error("importProducts:", res.error);
+      const all = parsed.rows;
+      const total = all.length;
+      let created = 0;
+      let updated = 0;
+      const skipped: SkippedRow[] = [];
+
+      setProgress({ done: 0, total });
+      try {
+        for (let offset = 0; offset < total; offset += IMPORT_CHUNK) {
+          const chunk = all.slice(offset, offset + IMPORT_CHUNK);
+          const res = await importProducts(chunk);
+          if (!res.ok) {
+            // res.error may carry a raw/internal code — don't surface it verbatim to the UI.
+            console.error("importProducts:", res.error);
+            setError(labels.errorGeneric);
+            return;
+          }
+          created += res.created ?? 0;
+          updated += res.updated ?? 0;
+          // res.skipped[].row is 1-based into the CHUNK we just sent — remap to the
+          // original rows array so the result panel points at the right product.
+          for (const s of res.skipped ?? []) skipped.push({ row: offset + s.row, reason: s.reason });
+          setProgress({ done: Math.min(offset + chunk.length, total), total });
+        }
+        setResult({ ok: true, created, updated, skipped });
+      } catch (e) {
+        // A thrown Server Action (413 body too large, network drop) rejects instead of
+        // returning {ok:false} — without this the spinner would just stop silently.
+        console.error("importProducts:", e);
         setError(labels.errorGeneric);
-        return;
+      } finally {
+        setProgress(null);
       }
-      setResult(res);
     });
   }
 
   function handleExport() {
     setExportError(null);
     startExport(async () => {
-      const res = await exportProducts();
-      if (!res.ok || res.csv == null) {
-        console.error("exportProducts:", res.error);
+      try {
+        const res = await exportProducts();
+        if (!res.ok || res.csv == null) {
+          console.error("exportProducts:", res.error);
+          setExportError(labels.exportError);
+          return;
+        }
+        downloadCsv(res.csv, `bubu-products-${todayStr()}.csv`);
+      } catch (e) {
+        // Same reasoning as handleImport: a rejected action must surface an error.
+        console.error("exportProducts:", e);
         setExportError(labels.exportError);
-        return;
       }
-      downloadCsv(res.csv, `bubu-products-${todayStr()}.csv`);
     });
   }
 
@@ -208,7 +251,11 @@ export default function ImportPanel({ labels, demoMode }: { labels: ImportPanelL
                   : "rounded-full bg-ink px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
               }
             >
-              {importPending ? labels.importing : labels.importButton.replace("{count}", String(rows.length))}
+              {importPending
+                ? progress
+                  ? labels.progress.replace("{done}", String(progress.done)).replace("{total}", String(progress.total))
+                  : labels.importing
+                : labels.importButton.replace("{count}", String(rows.length))}
             </button>
           </div>
 

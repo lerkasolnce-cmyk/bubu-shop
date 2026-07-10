@@ -23,6 +23,7 @@ export default async function AdminImportPage() {
     stockOutOfStock: t("product.outOfStock"),
     importButton: t("admin.import.importButton"),
     importing: t("admin.import.importing"),
+    progress: t("admin.import.progress"),
     exportButton: t("admin.import.exportButton"),
     exporting: t("admin.import.exporting"),
     resultTitle: t("admin.import.resultTitle"),

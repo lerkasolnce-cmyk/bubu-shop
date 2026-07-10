@@ -60,17 +60,20 @@ function parseBoolField(raw: string | undefined): { ok: true; value: boolean } |
  * parsing aborts with a single error and no rows (there's no sane per-row recovery
  * from a structurally wrong file). Otherwise every data row is validated independently;
  * a row with any problem is dropped from `rows` and each problem is reported in
- * `errors` with its 1-based data row number (header excluded). Duplicate slugs: the
- * first occurrence wins, later ones are reported as errors and dropped. `errors` is
- * capped at 100 entries plus one "...and N more" summary line, so a bad 3000-row file
- * doesn't produce a 3000-line error dump.
+ * `errors` with its 1-based data row number (header excluded). Blank lines are skipped
+ * without an error but still consume a row number — papaparse's skipEmptyLines would
+ * silently drop them BEFORE indexing, shifting every later row's reported number away
+ * from what the owner sees in her spreadsheet, so empty rows are filtered here instead.
+ * Duplicate slugs: the first occurrence wins, later ones are reported as errors and
+ * dropped. `errors` is capped at 100 entries plus one "...and N more" summary line, so
+ * a bad 3000-row file doesn't produce a 3000-line error dump.
  */
 export function parseProductsCsv(text: string): { rows: ProductCsvRow[]; errors: string[] } {
   const cleaned = stripBom(text);
 
   const parsed = Papa.parse<Record<string, string>>(cleaned, {
     header: true,
-    skipEmptyLines: true,
+    skipEmptyLines: false,
   });
 
   const fields = parsed.meta.fields ?? [];
@@ -85,6 +88,12 @@ export function parseProductsCsv(text: string): { rows: ProductCsvRow[]; errors:
 
   parsed.data.forEach((raw, index) => {
     const rowNum = index + 1;
+
+    // Fully-empty line (also covers the phantom row a trailing newline produces):
+    // no error, but the row number above is still consumed so later rows keep
+    // their spreadsheet-visible numbering.
+    if (Object.values(raw).every((v) => (v ?? "").trim() === "")) return;
+
     const rowErrors: string[] = [];
 
     const slug = (raw.slug ?? "").trim();

@@ -121,6 +121,20 @@ describe("parseProductsCsv", () => {
     expect(errors[0]).toContain("3");
   });
 
+  it("counts blank lines so error row numbers match the visible data rows", () => {
+    const text = [
+      HEADER,
+      `ok-1,A ua,A ru,Bubu,mebli,100,,in_stock,,,,`,
+      ``,
+      `bad-3,B ua,B ru,Bubu,mebli,abc,,in_stock,,,,`,
+    ].join("\r\n");
+    const { rows, errors } = parseProductsCsv(text);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].slug).toBe("ok-1");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain("3");
+  });
+
   it("caps errors at 100 with a summary line for the rest", () => {
     const lines = Array.from({ length: 120 }, (_, i) => `slug-${i},A ua,A ru,Bubu,mebli,abc,,in_stock,,,,`);
     const text = csv(...lines);

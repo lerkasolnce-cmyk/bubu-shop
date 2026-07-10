@@ -226,6 +226,7 @@
   "admin.import.colStock": "Наявність",
   "admin.import.importButton": "Імпортувати {count} товарів",
   "admin.import.importing": "Імпортування...",
+  "admin.import.progress": "Імпортовано {done} / {total}…",
   "admin.import.exportButton": "Експортувати CSV",
   "admin.import.exporting": "Експортування...",
   "admin.import.resultTitle": "Результат імпорту",
