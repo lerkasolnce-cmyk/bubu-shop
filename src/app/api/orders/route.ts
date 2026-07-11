@@ -4,6 +4,7 @@ import { demoProducts, isDemoMode } from "@/lib/demo";
 import { orderSchema } from "@/lib/order-schema";
 import { sendOrderNotification } from "@/lib/telegram";
 import { createInvoice } from "@/lib/mono";
+import { getEurRate, uahToEur } from "@/lib/currency";
 import type { OrderItem, PaymentStatus, Product } from "@/lib/types";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
-  const { customer, items, paymentMethod } = parsed.data;
+  const { customer, items, paymentMethod, locale } = parsed.data;
   const slugs = items.map((item) => item.slug);
 
   // DEMO MODE: no Supabase env configured yet. Preview the full checkout flow
@@ -86,6 +87,16 @@ export async function POST(request: NextRequest) {
 
   const paymentStatus: PaymentStatus = paymentMethod === "mono" ? "pending" : "n/a";
 
+  // UAH (`total`) is always the source of truth — monopay always charges UAH.
+  // For the 'it' locale we additionally snapshot the NBU rate used to show
+  // EUR at checkout, fixed onto the order forever (never recomputed later).
+  let eurRate: number | null = null;
+  let totalEur: number | null = null;
+  if (locale === "it") {
+    eurRate = await getEurRate();
+    totalEur = uahToEur(total, eurRate);
+  }
+
   const { data: order, error: insertError } = await supabase
     .from("orders")
     .insert({
@@ -99,6 +110,8 @@ export async function POST(request: NextRequest) {
       payment_method: paymentMethod,
       payment_status: paymentStatus,
       order_status: "new",
+      eur_rate: eurRate,
+      total_eur: totalEur,
     })
     .select("id")
     .single();

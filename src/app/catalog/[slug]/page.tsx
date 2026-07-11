@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getLocale, getT, pick } from "@/lib/i18n";
+import { getEurRate } from "@/lib/currency";
 import { createServerClient } from "@/lib/supabase/server";
 import { fetchProducts, fetchBrands, parseQueryFromSearchParams, buildHref, pluralKey, PAGE_SIZE } from "@/lib/catalog";
 import type { Category } from "@/lib/types";
@@ -60,9 +61,10 @@ export default async function CategoryPage({
   const t = getT(locale);
 
   const parsed = parseQueryFromSearchParams(sp);
-  const [{ items, total }, brands] = await Promise.all([
+  const [{ items, total }, brands, rate] = await Promise.all([
     fetchProducts({ ...parsed, categoryId: category?.id }),
     fetchBrands(category?.id),
+    locale === "it" ? getEurRate() : Promise.resolve(null),
   ]);
 
   const basePath = `/catalog/${slug}`;
@@ -122,7 +124,7 @@ export default async function CategoryPage({
             <>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
                 {items.map((product) => (
-                  <ProductCard key={product.id} product={product} locale={locale} t={t} />
+                  <ProductCard key={product.id} product={product} locale={locale} t={t} rate={rate} />
                 ))}
               </div>
               <Pagination

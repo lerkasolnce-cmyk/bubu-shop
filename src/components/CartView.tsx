@@ -8,6 +8,7 @@ import { cartTotal } from "@/lib/cart";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/shared";
 import { pick } from "@/lib/i18n/shared";
+import { formatPrice } from "@/lib/currency";
 
 type CartLabels = {
   title: string;
@@ -20,11 +21,16 @@ type CartLabels = {
   decrease: string;
 };
 
-function formatPrice(value: number): string {
-  return `₴${value.toLocaleString("uk-UA")}`;
-}
-
-export default function CartView({ locale, labels }: { locale: Locale; labels: CartLabels }) {
+export default function CartView({
+  locale,
+  labels,
+  rate,
+}: {
+  locale: Locale;
+  labels: CartLabels;
+  rate?: number | null;
+}) {
+  const showEurSub = locale === "it" && !!rate;
   const { items, ready, remove, setQty } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -100,7 +106,10 @@ export default function CartView({ locale, labels }: { locale: Locale; labels: C
 
               <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                 <p className="truncate text-sm font-semibold text-ink">{name}</p>
-                <p className="text-sm text-ink/60">{formatPrice(price)}</p>
+                <p className="text-sm text-ink/60">
+                  {formatPrice(price, locale, rate ?? undefined)}
+                  {showEurSub && <span className="ml-1 text-xs text-ink/40">({formatPrice(price, "ua")})</span>}
+                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -124,7 +133,7 @@ export default function CartView({ locale, labels }: { locale: Locale; labels: C
               </div>
 
               <div className="w-20 shrink-0 text-right text-sm font-extrabold text-ink">
-                {formatPrice(price * item.qty)}
+                {formatPrice(price * item.qty, locale, rate ?? undefined)}
               </div>
 
               <button
@@ -141,7 +150,10 @@ export default function CartView({ locale, labels }: { locale: Locale; labels: C
 
       <div className="flex items-center justify-between rounded-lg border border-blush/40 bg-white p-4">
         <span className="text-base font-semibold text-ink">{labels.total}</span>
-        <span className="text-xl font-extrabold text-ink">{formatPrice(total)}</span>
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-xl font-extrabold text-ink">{formatPrice(total, locale, rate ?? undefined)}</span>
+          {showEurSub && <span className="text-xs text-ink/50">{formatPrice(total, "ua")}</span>}
+        </div>
       </div>
 
       <Link

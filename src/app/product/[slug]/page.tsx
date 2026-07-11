@@ -2,6 +2,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getLocale, getT, pick } from "@/lib/i18n";
+import { formatPrice, getEurRate } from "@/lib/currency";
 import { createServerClient } from "@/lib/supabase/server";
 import { demoProducts, isDemoMode } from "@/lib/demo";
 import type { Product } from "@/lib/types";
@@ -88,7 +89,15 @@ export default async function ProductPage({
 
   const name = pick(product, "name", locale);
   const description = pick(product, "description", locale);
-  const similar = await getSimilarProducts(product.category_id, product.slug);
+  const [similar, rate] = await Promise.all([
+    getSimilarProducts(product.category_id, product.slug),
+    locale === "it" ? getEurRate() : Promise.resolve(null),
+  ]);
+
+  const showEurSub = locale === "it" && !!rate;
+  const priceMain = formatPrice(product.price, locale, rate ?? undefined);
+  const oldPriceMain =
+    product.old_price != null ? formatPrice(product.old_price, locale, rate ?? undefined) : null;
 
   const isOutOfStock = product.stock_status === "out_of_stock";
   const stockLabel =
@@ -112,15 +121,14 @@ export default async function ProductPage({
             <h1 className="mt-1 text-2xl font-extrabold text-ink sm:text-3xl">{name}</h1>
           </div>
 
-          <div className="flex items-baseline gap-3">
-            <span className={`text-3xl font-extrabold ${product.old_price != null ? "text-accent" : "text-ink"}`}>
-              ₴{product.price.toLocaleString("uk-UA")}
-            </span>
-            {product.old_price != null && (
-              <span className="text-lg text-ink/40 line-through">
-                ₴{product.old_price.toLocaleString("uk-UA")}
+          <div className="flex flex-col gap-1">
+            <div className="flex items-baseline gap-3">
+              <span className={`text-3xl font-extrabold ${product.old_price != null ? "text-accent" : "text-ink"}`}>
+                {priceMain}
               </span>
-            )}
+              {oldPriceMain != null && <span className="text-lg text-ink/40 line-through">{oldPriceMain}</span>}
+            </div>
+            {showEurSub && <span className="text-sm text-ink/50">{formatPrice(product.price, "ua")}</span>}
           </div>
 
           <span className="flex items-center gap-1.5 text-sm font-medium text-ink/60">
@@ -152,7 +160,7 @@ export default async function ProductPage({
       </div>
 
       <div className="mt-12">
-        <ProductRow title={t("product.similar")} products={similar} locale={locale} t={t} />
+        <ProductRow title={t("product.similar")} products={similar} locale={locale} t={t} rate={rate} />
       </div>
     </div>
   );

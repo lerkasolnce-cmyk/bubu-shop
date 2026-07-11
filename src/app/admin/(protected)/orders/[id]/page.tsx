@@ -126,6 +126,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </tr>
           </tfoot>
         </table>
+        {order.total_eur != null && order.eur_rate != null && (
+          <p className="mt-2 text-right text-sm text-ink/50">
+            {t("admin.orders.eurApprox")
+              .replace("{amount}", order.total_eur.toFixed(2))
+              .replace("{rate}", order.eur_rate.toFixed(2))}
+          </p>
+        )}
       </section>
 
       <section className="rounded-lg border border-blush/40 bg-white p-4">

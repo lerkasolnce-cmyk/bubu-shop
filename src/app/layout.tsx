@@ -34,10 +34,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  const htmlLang: Record<typeof locale, string> = { ua: "uk", ru: "ru", it: "it", en: "en" };
 
   return (
     <html
-      lang={locale === "ru" ? "ru" : "uk"}
+      lang={htmlLang[locale]}
       className={`${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream text-ink">

@@ -22,6 +22,9 @@ export const orderSchema = z.object({
     .min(1)
     .max(50),
   paymentMethod: z.enum(["mono", "cod"]),
+  // Shopper's locale at checkout time — only 'it' triggers an EUR rate
+  // snapshot on the order; monopay/UAH accounting is unaffected either way.
+  locale: z.enum(["ua", "ru", "it", "en"]).optional().default("ua"),
 });
 
 export type OrderInput = z.infer<typeof orderSchema>;

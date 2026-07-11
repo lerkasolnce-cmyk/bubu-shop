@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale, getT } from "@/lib/i18n";
+import { getEurRate } from "@/lib/currency";
 import { fetchProducts, parseQueryFromSearchParams, buildHref, pluralKey, PAGE_SIZE } from "@/lib/catalog";
 import type { SortKey } from "@/lib/catalog";
 import ProductCard from "@/components/ProductCard";
@@ -29,7 +30,10 @@ export default async function SearchPage({
   const t = getT(locale);
 
   const parsed = parseQueryFromSearchParams(sp);
-  const { items, total } = await fetchProducts(parsed);
+  const [{ items, total }, rate] = await Promise.all([
+    fetchProducts(parsed),
+    locale === "it" ? getEurRate() : Promise.resolve(null),
+  ]);
 
   const basePath = "/search";
   const sortLabels: Record<SortKey, string> = {
@@ -61,7 +65,7 @@ export default async function SearchPage({
           <>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
               {items.map((product) => (
-                <ProductCard key={product.id} product={product} locale={locale} t={t} />
+                <ProductCard key={product.id} product={product} locale={locale} t={t} rate={rate} />
               ))}
             </div>
             <Pagination

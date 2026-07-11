@@ -1,4 +1,5 @@
 import { getLocale, getT, pick } from "@/lib/i18n";
+import { getEurRate } from "@/lib/currency";
 import { createServerClient } from "@/lib/supabase/server";
 import { demoCategories, demoProducts, isDemoMode } from "@/lib/demo";
 import type { Category, Product } from "@/lib/types";
@@ -84,10 +85,11 @@ export default async function Home() {
   const locale = await getLocale();
   const t = getT(locale);
 
-  const [hits, sale, categories] = await Promise.all([
+  const [hits, sale, categories, rate] = await Promise.all([
     getHitProducts(),
     getSaleProducts(),
     getCategoriesWithCounts(),
+    locale === "it" ? getEurRate() : Promise.resolve(null),
   ]);
 
   const categoryCards = categories.map((cat) => ({
@@ -103,10 +105,10 @@ export default async function Home() {
           nesting would compound transforms (~32px) and double-observe every card. */}
       <CategoryGrid categories={categoryCards} t={t} />
       <Reveal delay={80}>
-        <ProductRow title={t("home.hits")} products={hits} locale={locale} t={t} />
+        <ProductRow title={t("home.hits")} products={hits} locale={locale} t={t} rate={rate} />
       </Reveal>
       <Reveal delay={80}>
-        <ProductRow title={t("home.sale")} products={sale} locale={locale} t={t} />
+        <ProductRow title={t("home.sale")} products={sale} locale={locale} t={t} rate={rate} />
       </Reveal>
       <Reveal delay={120}>
         <BrandStrip />

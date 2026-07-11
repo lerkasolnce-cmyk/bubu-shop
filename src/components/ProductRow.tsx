@@ -7,11 +7,13 @@ export default function ProductRow({
   products,
   locale,
   t,
+  rate,
 }: {
   title: string;
   products: Product[];
   locale: Locale;
   t: (key: string) => string;
+  rate?: number | null;
 }) {
   // Fail-soft: no data (no DB yet, or empty result) → skip the section entirely.
   if (products.length === 0) return null;
@@ -22,7 +24,7 @@ export default function ProductRow({
       <div className="scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
         {products.map((product) => (
           <div key={product.id} className="w-[46%] shrink-0 snap-start sm:w-[220px] lg:w-auto">
-            <ProductCard product={product} locale={locale} t={t} />
+            <ProductCard product={product} locale={locale} t={t} rate={rate} />
           </div>
         ))}
       </div>

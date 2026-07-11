@@ -211,6 +211,7 @@
   "admin.orders.paymentStatusFailed": "Ошибка оплаты",
   "admin.orders.paymentStatusNA": "Наличными при получении",
   "admin.orders.invoiceId": "ID счёта Monobank",
+  "admin.orders.eurApprox": "≈ €{amount} (курс {rate})",
   "admin.import.title": "Импорт / экспорт товаров",
   "admin.import.demoNotice": "Импорт и экспорт заработают после подключения Supabase",
   "admin.import.chooseFile": "Выбрать CSV-файл",

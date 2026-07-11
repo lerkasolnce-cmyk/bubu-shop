@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/lib/i18n";
 import { pick } from "@/lib/i18n";
+import { formatPrice } from "@/lib/currency";
 import AddToCartButton from "./AddToCartButton";
 
 function StrollerPlaceholder() {
@@ -29,12 +30,18 @@ export default function ProductCard({
   product,
   locale,
   t,
+  rate,
 }: {
   product: Product;
   locale: Locale;
   t: (key: string) => string;
+  rate?: number | null;
 }) {
   const name = pick(product, "name", locale);
+  const showEurSub = locale === "it" && !!rate;
+  const priceMain = formatPrice(product.price, locale, rate ?? undefined);
+  const oldPriceMain =
+    product.old_price != null ? formatPrice(product.old_price, locale, rate ?? undefined) : null;
   const image = product.images?.[0];
   const isOutOfStock = product.stock_status === "out_of_stock";
   const stockLabel =
@@ -77,12 +84,13 @@ export default function ProductCard({
         <div className="flex flex-1 flex-col gap-1 p-3">
           <span className="text-xs font-semibold uppercase tracking-wide text-ink/50">{product.brand}</span>
           <h3 className="line-clamp-2 text-sm font-semibold text-ink">{name}</h3>
-          <div className="mt-auto flex items-baseline gap-2 pt-1">
-            <span className="text-lg font-extrabold text-ink">₴{product.price.toLocaleString("uk-UA")}</span>
-            {product.old_price != null && (
-              <span className="text-sm text-ink/40 line-through">
-                ₴{product.old_price.toLocaleString("uk-UA")}
-              </span>
+          <div className="mt-auto flex flex-col gap-0.5 pt-1">
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-extrabold text-ink">{priceMain}</span>
+              {oldPriceMain != null && <span className="text-sm text-ink/40 line-through">{oldPriceMain}</span>}
+            </div>
+            {showEurSub && (
+              <span className="text-xs text-ink/50">{formatPrice(product.price, "ua")}</span>
             )}
           </div>
           <span className="flex items-center gap-1.5 text-xs font-medium text-ink/60">

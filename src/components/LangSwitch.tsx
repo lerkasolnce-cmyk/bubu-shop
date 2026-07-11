@@ -3,6 +3,13 @@
 import { useRouter } from "next/navigation";
 import type { Locale } from "@/lib/i18n";
 
+const OPTIONS: { locale: Locale; label: string }[] = [
+  { locale: "ua", label: "UA" },
+  { locale: "ru", label: "RU" },
+  { locale: "it", label: "IT" },
+  { locale: "en", label: "EN" },
+];
+
 export default function LangSwitch({ locale }: { locale: Locale }) {
   const router = useRouter();
 
@@ -18,23 +25,19 @@ export default function LangSwitch({ locale }: { locale: Locale }) {
 
   return (
     <div className="flex shrink-0 items-center gap-1 text-sm font-bold">
-      <button
-        type="button"
-        onClick={() => setLocale("ua")}
-        aria-current={locale === "ua"}
-        className={locale === "ua" ? "text-ink" : "text-ink/40 hover:text-ink/70"}
-      >
-        UA
-      </button>
-      <span className="text-ink/30">/</span>
-      <button
-        type="button"
-        onClick={() => setLocale("ru")}
-        aria-current={locale === "ru"}
-        className={locale === "ru" ? "text-ink" : "text-ink/40 hover:text-ink/70"}
-      >
-        RU
-      </button>
+      {OPTIONS.map((opt, i) => (
+        <span key={opt.locale} className="flex items-center gap-1">
+          {i > 0 && <span className="text-ink/30">/</span>}
+          <button
+            type="button"
+            onClick={() => setLocale(opt.locale)}
+            aria-current={locale === opt.locale}
+            className={locale === opt.locale ? "text-ink" : "text-ink/40 hover:text-ink/70"}
+          >
+            {opt.label}
+          </button>
+        </span>
+      ))}
     </div>
   );
 }

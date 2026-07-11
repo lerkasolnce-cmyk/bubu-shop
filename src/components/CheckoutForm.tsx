@@ -10,6 +10,7 @@ import { orderSchema } from "@/lib/order-schema";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/shared";
 import { pick } from "@/lib/i18n/shared";
+import { formatPrice } from "@/lib/currency";
 
 export type CheckoutLabels = {
   title: string;
@@ -36,10 +37,6 @@ export type CheckoutLabels = {
 
 type FieldErrors = Partial<Record<"name" | "phone" | "city", string>>;
 
-function formatPrice(value: number): string {
-  return `₴${value.toLocaleString("uk-UA")}`;
-}
-
 /** Strips everything but digits and drops a leading 0/380 the user may paste/type. */
 function normalizePhoneDigits(raw: string): string {
   const digitsOnly = raw.replace(/\D/g, "");
@@ -51,9 +48,18 @@ function normalizePhoneDigits(raw: string): string {
   return trimmed.slice(0, 9);
 }
 
-export default function CheckoutForm({ locale, labels }: { locale: Locale; labels: CheckoutLabels }) {
+export default function CheckoutForm({
+  locale,
+  labels,
+  rate,
+}: {
+  locale: Locale;
+  labels: CheckoutLabels;
+  rate?: number | null;
+}) {
   const router = useRouter();
   const { items, ready, clear } = useCart();
+  const showEurSub = locale === "it" && !!rate;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [name, setName] = useState("");
@@ -120,6 +126,7 @@ export default function CheckoutForm({ locale, labels }: { locale: Locale; label
       customer: { name, phone: `+380${phoneDigits}`, city, npOffice, comment },
       items,
       paymentMethod,
+      locale,
     });
 
     if (!parsed.success) {
@@ -304,14 +311,19 @@ export default function CheckoutForm({ locale, labels }: { locale: Locale; label
                   <span className="text-ink/70">
                     {name} × {item.qty}
                   </span>
-                  <span className="shrink-0 font-semibold text-ink">{formatPrice(price * item.qty)}</span>
+                  <span className="shrink-0 font-semibold text-ink">
+                    {formatPrice(price * item.qty, locale, rate ?? undefined)}
+                  </span>
                 </div>
               );
             })}
           </div>
           <div className="flex items-center justify-between border-t border-blush/40 pt-3">
             <span className="text-sm font-semibold text-ink">{labels.total}</span>
-            <span className="text-lg font-extrabold text-ink">{formatPrice(total)}</span>
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="text-lg font-extrabold text-ink">{formatPrice(total, locale, rate ?? undefined)}</span>
+              {showEurSub && <span className="text-xs text-ink/50">{formatPrice(total, "ua")}</span>}
+            </div>
           </div>
         </aside>
       </div>

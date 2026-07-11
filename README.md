@@ -33,16 +33,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 1. Створіть проект на [supabase.com](https://supabase.com).
 2. Відкрийте **SQL Editor** → вставте вміст `supabase/migrations/001_schema.sql` → **Run**. Це створить таблиці `categories`, `products`, `orders`, увімкне RLS-політики та storage bucket `products` для фото товарів.
-3. У **Project Settings → API** скопіюйте `Project URL`, `anon public` ключ і `service_role` ключ.
-4. Створіть файл `.env.local` в корені проєкту:
+3. Там само виконайте `supabase/migrations/002_locales_eur.sql` (після 001) — додає колонки `name_it`/`name_en`/`description_it`/`description_en` у `products` та `eur_rate`/`total_eur` у `orders` (для локалі IT: ціни в EUR за курсом НБУ, зафіксованим на момент замовлення; грн лишається основною валютою).
+4. У **Project Settings → API** скопіюйте `Project URL`, `anon public` ключ і `service_role` ключ.
+5. Створіть файл `.env.local` в корені проєкту:
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=xxxxx
    SUPABASE_SERVICE_ROLE_KEY=xxxxx
    ```
    `SUPABASE_SERVICE_ROLE_KEY` — секретний ключ, ніколи не використовується в клієнтському коді і не потрапляє в git (`.env.local` вже в `.gitignore`).
-5. У **Authentication → Users** створіть адмін-користувача (email/пароль) вручну — під ним заходьте в адмін-панель: `/admin/login` (без сесії всі `/admin/*` редіректять на логін).
-6. Заповніть базу тестовими товарами:
+6. У **Authentication → Users** створіть адмін-користувача (email/пароль) вручну — під ним заходьте в адмін-панель: `/admin/login` (без сесії всі `/admin/*` редіректять на логін).
+7. Заповніть базу тестовими товарами:
    ```
    npx tsx scripts/seed.ts
    ```

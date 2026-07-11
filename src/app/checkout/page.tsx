@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale, getT } from "@/lib/i18n";
+import { getEurRate } from "@/lib/currency";
 import CheckoutForm from "@/components/CheckoutForm";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -11,6 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function CheckoutPage() {
   const locale = await getLocale();
   const t = getT(locale);
+  const rate = locale === "it" ? await getEurRate() : null;
 
   const labels = {
     title: t("checkout.title"),
@@ -37,7 +39,7 @@ export default async function CheckoutPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8">
-      <CheckoutForm locale={locale} labels={labels} />
+      <CheckoutForm locale={locale} labels={labels} rate={rate} />
     </div>
   );
 }
