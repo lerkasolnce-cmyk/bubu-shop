@@ -1,3 +1,4 @@
+-- ВАЖНО: политики используют auth.role()='authenticated' — в Supabase ОБЯЗАТЕЛЬНО отключите Email Sign Ups (Authentication → Providers), иначе любой сможет зарегистрироваться и получить доступ админа.
 create table categories (
   id uuid primary key default gen_random_uuid(),
   slug text unique not null,

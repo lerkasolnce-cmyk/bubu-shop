@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale, getT } from "@/lib/i18n";
+import { telHref } from "@/lib/format";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -8,20 +9,6 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t("seo.contacts.title"),
     description: t("seo.contacts.description"),
   };
-}
-
-/**
- * Derives a tel: href from the display phone in the dict, so the link can never
- * drift from the visible number. Returns null while the dict still holds the
- * `+380 __ ___ __ __` placeholder (underscores / too few digits) — the phone
- * then renders as plain text without a broken tel: link.
- */
-function telHref(displayPhone: string): string | null {
-  if (displayPhone.includes("_")) return null;
-  const compact = displayPhone.replace(/[\s()-]/g, "");
-  const digits = compact.replace(/\D/g, "");
-  if (digits.length < 10) return null;
-  return `tel:${compact}`;
 }
 
 export default async function ContactsPage() {

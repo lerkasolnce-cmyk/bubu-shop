@@ -3,6 +3,7 @@ import { getLocale, getT, pick } from "@/lib/i18n";
 import { createServerClient } from "@/lib/supabase/server";
 import type { Category } from "@/lib/types";
 import { demoCategories, isDemoMode } from "@/lib/demo";
+import { telHref } from "@/lib/format";
 import LangSwitch from "./LangSwitch";
 import CartBadge from "./CartBadge";
 import MobileMenu from "./MobileMenu";
@@ -30,6 +31,8 @@ export default async function Header() {
   const locale = await getLocale();
   const t = getT(locale);
   const categories = await getRootCategories();
+  const phone = t("header.phone");
+  const phoneHref = telHref(phone);
 
   const navLinks = [
     { href: "/delivery", label: t("nav.delivery") },
@@ -61,12 +64,16 @@ export default async function Header() {
           />
         </form>
 
-        <a
-          href="tel:+380000000000"
-          className="hidden shrink-0 text-sm font-semibold text-ink/80 hover:text-ink lg:block"
-        >
-          {t("header.phone")}
-        </a>
+        {phoneHref ? (
+          <a
+            href={phoneHref}
+            className="hidden shrink-0 text-sm font-semibold text-ink/80 hover:text-ink lg:block"
+          >
+            {phone}
+          </a>
+        ) : (
+          <span className="hidden shrink-0 text-sm font-semibold text-ink/80 lg:block">{phone}</span>
+        )}
 
         <LangSwitch locale={locale} />
 

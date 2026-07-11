@@ -13,7 +13,6 @@ type OrderSummary = {
   total: number;
   total_eur: number | null;
   eur_rate: number | null;
-  payment_method: string;
 };
 
 /**
@@ -33,7 +32,7 @@ async function loadOrderSummary(idRaw: string): Promise<OrderSummary | null> {
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("orders")
-      .select("id,total,total_eur,eur_rate,payment_method")
+      .select("id,total,total_eur,eur_rate")
       .eq("id", parsedId.data)
       .maybeSingle();
     if (error || !data) return null;
