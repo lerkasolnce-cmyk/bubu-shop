@@ -59,6 +59,10 @@ export default function CheckoutForm({
 }) {
   const router = useRouter();
   const { items, ready, clear } = useCart();
+  // it-locale price display rule (kept in sync with CartView):
+  // per-line UNIT prices and the GRAND total show € main + ₴ small underneath;
+  // line subtotals (qty × price) show € only. This summary lists only line
+  // subtotals + the grand total, so only the grand total carries the ₴ sub.
   const showEurSub = locale === "it" && !!rate;
 
   const [products, setProducts] = useState<Product[]>([]);

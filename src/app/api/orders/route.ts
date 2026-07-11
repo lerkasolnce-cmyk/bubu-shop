@@ -93,8 +93,15 @@ export async function POST(request: NextRequest) {
   let eurRate: number | null = null;
   let totalEur: number | null = null;
   if (locale === "it") {
-    eurRate = await getEurRate();
-    totalEur = uahToEur(total, eurRate);
+    const rate = await getEurRate();
+    // Guard against a misconfigured EUR_UAH_FALLBACK_RATE (NaN/0/negative) —
+    // better no EUR snapshot on the order than a NaN in the DB.
+    if (Number.isFinite(rate) && rate > 0) {
+      eurRate = rate;
+      totalEur = uahToEur(total, rate);
+    } else {
+      console.error(`POST /api/orders: unusable EUR rate (${rate}) — skipping EUR snapshot`);
+    }
   }
 
   const { data: order, error: insertError } = await supabase

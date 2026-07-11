@@ -66,6 +66,8 @@
   "order.thanksTitle": "Grazie per il tuo ordine!",
   "order.thanksNumber": "Ordine",
   "order.thanksText": "Ti contatteremo a breve per la conferma.",
+  "order.totalLabel": "Totale dell'ordine",
+  "order.eurApprox": "≈ €{amount} (cambio {rate})",
   "order.backHome": "Torna alla home",
   "hero.title": "Passeggini per i più piccoli — con amore da Odessa",
   "hero.subtitle": "Marchi affidabili, prezzi convenienti e cura per ogni famiglia",

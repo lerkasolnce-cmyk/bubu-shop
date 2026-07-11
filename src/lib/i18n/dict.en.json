@@ -66,6 +66,8 @@
   "order.thanksTitle": "Thank you for your order!",
   "order.thanksNumber": "Order",
   "order.thanksText": "We'll contact you shortly to confirm.",
+  "order.totalLabel": "Order total",
+  "order.eurApprox": "≈ €{amount} (rate {rate})",
   "order.backHome": "Go home",
   "hero.title": "Strollers for little ones — made with love in Odesa",
   "hero.subtitle": "Trusted brands, fair prices, and care for every family",

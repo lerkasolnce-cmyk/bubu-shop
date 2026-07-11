@@ -30,6 +30,9 @@ export default function CartView({
   labels: CartLabels;
   rate?: number | null;
 }) {
+  // it-locale price display rule (kept in sync with CheckoutForm):
+  // per-line UNIT prices and the GRAND total show € main + ₴ small underneath;
+  // line subtotals (qty × price) show € only. UAH is the primary business currency.
   const showEurSub = locale === "it" && !!rate;
   const { items, ready, remove, setQty } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
@@ -106,10 +109,8 @@ export default function CartView({
 
               <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                 <p className="truncate text-sm font-semibold text-ink">{name}</p>
-                <p className="text-sm text-ink/60">
-                  {formatPrice(price, locale, rate ?? undefined)}
-                  {showEurSub && <span className="ml-1 text-xs text-ink/40">({formatPrice(price, "ua")})</span>}
-                </p>
+                <p className="text-sm text-ink/60">{formatPrice(price, locale, rate ?? undefined)}</p>
+                {showEurSub && <p className="text-xs text-ink/40">{formatPrice(price, "ua")}</p>}
               </div>
 
               <div className="flex items-center gap-2">

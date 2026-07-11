@@ -66,6 +66,8 @@
   "order.thanksTitle": "Дякуємо за замовлення!",
   "order.thanksNumber": "Замовлення",
   "order.thanksText": "Ми зв'яжемося з вами найближчим часом для підтвердження.",
+  "order.totalLabel": "Сума замовлення",
+  "order.eurApprox": "≈ €{amount} (курс {rate})",
   "order.backHome": "На головну",
   "hero.title": "Коляски для найменших — з любов'ю з Одеси",
   "hero.subtitle": "Перевірені бренди, приємні ціни та турбота про кожну родину",
