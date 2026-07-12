@@ -16,14 +16,25 @@ const FRAME_COUNT = 100;
 const FRAME_DIR = "/anim/seq/";
 const LAST_FRAME = `${FRAME_DIR}f100.webp`;
 
+const INTRO_COUNT = 103;
+const INTRO_DIR = "/anim/intro/";
+
 function frameUrl(n: number) {
   return `${FRAME_DIR}f${String(n).padStart(3, "0")}.webp`;
 }
 
+function introUrl(n: number) {
+  return `${INTRO_DIR}b${String(n).padStart(3, "0")}.webp`;
+}
+
 // Phase boundaries (fractions of total scroll progress through the pinned section).
-const PHASE_A_END = 0.22; // wheel falls + bounces
-const PHASE_B_END = 0.42; // wheel rolls in, ends matching frame f001's wheel exactly
-const PHASE_D_START = 0.88; // last stretch: frames 96-100 + text fade-in
+const INTRO_END = 0.26; // baby plays with the wheel (intro frame sequence)
+const PHASE_A_END = 0.44; // wheel falls + bounces (intro crossfades out at the start)
+const PHASE_B_END = 0.58; // wheel rolls in, ends matching frame f001's wheel exactly
+const PHASE_D_START = 0.9; // last stretch: frames 96-100 + text fade-in
+// The intro's last frame stays under the falling wheel and fades out over this
+// fraction of phase A, so the baby "hands over" to the fall without a hard cut.
+const INTRO_FADE_PORTION = 0.3;
 
 // Wheel geometry, measured pixel-exactly from the source assets (see task-17-report.md):
 // - f001.webp (1440x810): wheel circle spans x 405..1035, y 101..723 → center
@@ -89,6 +100,7 @@ export default function ScrollScene({
   const pinRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLImageElement>(null);
+  const shadowRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const fallbackImgRef = useRef<HTMLImageElement>(null);
@@ -115,24 +127,27 @@ export default function ScrollScene({
       const pin = pinRef.current;
       const stage = stageRef.current;
       const wheel = wheelRef.current;
+      const shadow = shadowRef.current;
       const canvas = canvasRef.current;
       const text = textRef.current;
-      if (!section || !pin || !stage || !wheel || !canvas || !text) return;
+      if (!section || !pin || !stage || !wheel || !shadow || !canvas || !text) return;
 
       const ctx = canvas.getContext("2d");
 
       // --- Frame preloading -------------------------------------------------
       const images: (HTMLImageElement | null)[] = new Array(FRAME_COUNT).fill(null);
-      let lastDrawnIndex = 0; // 1-based frame currently on the canvas (or last available)
+      const introImages: (HTMLImageElement | null)[] = new Array(INTRO_COUNT).fill(null);
+      let lastDrawnIndex = 0; // 1-based assembly frame currently wanted on the canvas
+      let lastIntroIndex = 1; // 1-based intro frame currently wanted on the canvas
 
-      const loadFrame = (n: number) =>
+      const loadInto = (store: (HTMLImageElement | null)[], n: number, url: string) =>
         new Promise<void>((resolve) => {
           const img = new Image();
           let settled = false;
           const done = () => {
             if (settled) return;
             settled = true;
-            images[n - 1] = img;
+            store[n - 1] = img;
             resolve();
           };
           // `load`/`error` fire on network fetch and are the reliable completion
@@ -146,14 +161,24 @@ export default function ScrollScene({
             if (typeof img.decode === "function") img.decode().catch(() => {});
           };
           img.onerror = done;
-          img.src = frameUrl(n);
+          img.src = url;
         });
+
+      const loadFrame = (n: number) => loadInto(images, n, frameUrl(n));
+      const loadIntro = (n: number) => loadInto(introImages, n, introUrl(n));
 
       let cancelled = false;
       (async () => {
-        // Frames 1-20 up front (phase C starts needing early frames quickly).
+        // The first paint shows intro frame 1 — fetch it before everything else,
+        // then warm both sequences' opening stretches, then the long tails.
+        for (let n = 1; n <= 10 && !cancelled; n++) {
+          await loadIntro(n);
+        }
         for (let n = 1; n <= 20 && !cancelled; n++) {
           await loadFrame(n);
+        }
+        for (let n = 11; n <= INTRO_COUNT && !cancelled; n++) {
+          await loadIntro(n);
         }
         // Remaining frames lazily, one at a time, without blocking scroll/render.
         for (let n = 21; n <= FRAME_COUNT && !cancelled; n++) {
@@ -205,22 +230,37 @@ export default function ScrollScene({
         const imgCenterY = circleCenterY + (0.5 - CIRCLE_CENTER_Y_IN_WHEEL_IMG) * wheelSidePx;
         wheel!.style.top = `${imgCenterY}px`;
 
+        // Ground shadow: a static ellipse on the floor line (the wheel img itself is a
+        // clean shadow-free disc — see wheel-disc.webp — so the shadow must not rotate).
+        const circleDiameterPx = wheelSidePx * CIRCLE_DIAMETER_FRACTION_OF_WHEEL_IMG;
+        const groundY = circleCenterY + circleDiameterPx / 2;
+        shadow!.style.width = `${circleDiameterPx * 0.95}px`;
+        shadow!.style.height = `${circleDiameterPx * 0.14}px`;
+        shadow!.style.top = `${groundY}px`;
+
         drawCurrentFrame();
       }
 
-      function nearestLoadedImage(): HTMLImageElement | null {
+      function nearestLoaded(store: (HTMLImageElement | null)[], want: number): HTMLImageElement | null {
         // Prefer the requested frame; while it's still loading, hold the closest
         // earlier frame that IS loaded (per spec: "держать последний доступный").
-        for (let i = Math.max(1, lastDrawnIndex); i >= 1; i--) {
-          const im = images[i - 1];
+        for (let i = Math.max(1, want); i >= 1; i--) {
+          const im = store[i - 1];
           if (im) return im;
         }
-        return images.find((im) => im !== null) ?? null;
+        return store.find((im) => im !== null) ?? null;
       }
+
+      // Which sequence the canvas is currently showing: the intro (baby) during the
+      // opening phases, the assembly sequence from the roll handoff onward.
+      let canvasMode: "intro" | "assembly" = "intro";
 
       function drawCurrentFrame() {
         if (!ctx || !stageW || !stageH) return;
-        const img = nearestLoadedImage();
+        const img =
+          canvasMode === "intro"
+            ? nearestLoaded(introImages, lastIntroIndex)
+            : nearestLoaded(images, lastDrawnIndex);
         if (!img) return;
         ctx.clearRect(0, 0, stageW, stageH);
         ctx.drawImage(img, drawX, drawY, drawW, drawH);
@@ -255,12 +295,27 @@ export default function ScrollScene({
         const rollDistance = Math.max(1, Math.round((stageW * 0.32) / spokeStep)) * spokeStep;
         const rollStartX = -rollDistance;
 
-        if (p < PHASE_A_END) {
-          // Phase A: fall + bounce, in place (at the roll's start position).
-          const localT = p / PHASE_A_END;
+        if (p < INTRO_END) {
+          // Intro: the baby plays with the wheel (scrubbed frame sequence).
+          canvasMode = "intro";
+          const localT = p / INTRO_END;
+          lastIntroIndex = Math.min(INTRO_COUNT, Math.max(1, Math.round(1 + localT * (INTRO_COUNT - 1))));
+          drawCurrentFrame();
+          gsap.set(canvas, { opacity: 1 });
+          gsap.set(wheel, { opacity: 0 });
+          gsap.set(shadow, { opacity: 0 });
+          gsap.set(text, { opacity: 0, y: 24 });
+        } else if (p < PHASE_A_END) {
+          // Phase A: fall + bounce, in place (at the roll's start position). The
+          // intro's last frame stays underneath and fades out during the drop.
+          const localT = (p - INTRO_END) / (PHASE_A_END - INTRO_END);
           const { y, rotate, scaleY } = sampleKeyframes(localT);
           // Fall from fully above the viewport down to the resting line.
           const fallDistancePx = stageH * 0.55 + wheelSidePx;
+          canvasMode = "intro";
+          lastIntroIndex = INTRO_COUNT;
+          drawCurrentFrame();
+          gsap.set(canvas, { opacity: 1 - Math.min(1, localT / INTRO_FADE_PORTION) });
           gsap.set(wheel, {
             xPercent: -50,
             yPercent: -50,
@@ -271,7 +326,16 @@ export default function ScrollScene({
             scaleX: 1,
             opacity: 1,
           });
-          gsap.set(canvas, { opacity: 0 });
+          // The shadow deepens as the wheel nears the floor (y goes -1 → 0) and
+          // widens with the impact squash; it does NOT rotate with the wheel.
+          gsap.set(shadow, {
+            xPercent: -50,
+            yPercent: -50,
+            x: rollStartX,
+            opacity: 0.35 * (1 + y), // y is negative above ground
+            scaleX: 1 + (1 - scaleY) * 1.4,
+            scaleY: 1,
+          });
           gsap.set(text, { opacity: 0, y: 24 }); // reset when scrubbing back from phase D
         } else if (p < PHASE_B_END) {
           // Phase B: roll left -> right; rotation = distance / (π·d) · 360 for a
@@ -290,11 +354,16 @@ export default function ScrollScene({
             scaleY: 1,
             opacity: 1,
           });
+          gsap.set(shadow, { xPercent: -50, yPercent: -50, x, opacity: 0.35, scaleX: 1, scaleY: 1 });
           gsap.set(canvas, { opacity: 0 });
           gsap.set(text, { opacity: 0, y: 24 }); // reset when scrubbing back from phase D
         } else {
-          // Phase C/D: canvas frame sequence + text fade in during the final 12%.
+          // Phase C/D: canvas frame sequence + text fade in during the final stretch.
+          // The assembly frames carry their own baked-in ground shadow, so the
+          // synthetic ellipse hands off to them here.
+          canvasMode = "assembly";
           gsap.set(wheel, { opacity: 0 });
+          gsap.set(shadow, { opacity: 0 });
           gsap.set(canvas, { opacity: 1 });
 
           const frameFloat = frameForProgress(p);
@@ -326,7 +395,8 @@ export default function ScrollScene({
       render(0);
 
       const isTouch = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
-      section.style.setProperty("--scene-height", isTouch ? "220vh" : "300vh");
+      // Longer pin than the original scene: the baby intro adds a phase.
+      section.style.setProperty("--scene-height", isTouch ? "300vh" : "380vh");
 
       const trigger = ScrollTrigger.create({
         trigger: section,
@@ -393,17 +463,28 @@ export default function ScrollScene({
             />
           )}
           {animated && (
-            <img
-              ref={wheelRef}
-              src="/anim/wheel.webp"
-              alt=""
-              aria-hidden
-              // Positioned/centered entirely by GSAP (xPercent/yPercent -50 + x/y):
-              // a CSS translate here would be overwritten by gsap.set's transform.
-              // Starts invisible; render(0) places it before the first paint.
-              className="absolute left-1/2"
-              style={{ opacity: 0, willChange: "transform" }}
-            />
+            <>
+              {/* Static ground shadow for the falling/rolling wheel: the disc asset has
+                  no baked shadow (it would rotate along), so the floor contact lives
+                  in this separate non-rotating ellipse. */}
+              <div
+                ref={shadowRef}
+                aria-hidden
+                className="absolute left-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(74,59,50,0.55)_0%,transparent_70%)] blur-[2px]"
+                style={{ opacity: 0 }}
+              />
+              <img
+                ref={wheelRef}
+                src="/anim/wheel-disc.webp"
+                alt=""
+                aria-hidden
+                // Positioned/centered entirely by GSAP (xPercent/yPercent -50 + x/y):
+                // a CSS translate here would be overwritten by gsap.set's transform.
+                // Starts invisible; render(0) places it before the first paint.
+                className="absolute left-1/2"
+                style={{ opacity: 0, willChange: "transform" }}
+              />
+            </>
           )}
         </div>
 
