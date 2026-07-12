@@ -28,13 +28,21 @@ function introUrl(n: number) {
 }
 
 // Phase boundaries (fractions of total scroll progress through the pinned section).
+// Story order (per owner's feedback): the baby plays with the wheel, the SAME wheel
+// keeps rolling out of the vignette, and only then drops/settles at center stage.
 const INTRO_END = 0.26; // baby plays with the wheel (intro frame sequence)
-const PHASE_A_END = 0.44; // wheel falls + bounces (intro crossfades out at the start)
-const PHASE_B_END = 0.58; // wheel rolls in, ends matching frame f001's wheel exactly
+const ROLL_END = 0.46; // the wheel rolls in from the baby's side to center stage
+const HOP_END = 0.58; // ...then hops up and falls onto its spot (bounce + squash)
 const PHASE_D_START = 0.9; // last stretch: frames 96-100 + text fade-in
-// The intro's last frame stays under the falling wheel and fades out over this
-// fraction of phase A, so the baby "hands over" to the fall without a hard cut.
-const INTRO_FADE_PORTION = 0.3;
+// The intro's last frame fades out over this fraction of the roll phase, quickly,
+// so the rolling wheel never coexists with a ghost of the intro wheel.
+const INTRO_FADE_PORTION = 0.15;
+// The baby vignette is drawn smaller than the full stage (owner: baby was too big),
+// bottom-anchored so the floor line stays put.
+const INTRO_SCALE = 0.72;
+// How much the assembled stroller shrinks upward while the headline fades in, so
+// the text never overlaps the product (owner: captions must not overlap).
+const TEXT_CLEARANCE_SCALE = 0.2;
 
 // Wheel geometry, measured pixel-exactly from the source assets (see task-17-report.md):
 // - f001.webp (1440x810): wheel circle spans x 405..1035, y 101..723 → center
@@ -54,12 +62,15 @@ const CIRCLE_DIAMETER_FRACTION_OF_WHEEL_IMG = 0.935; // of wheel img side
 // distance (y) and small rotation/squash accents. Scrub-driven, so every segment is a
 // straight line (ease: none) — the bounce shape comes from the keyframe placement, not
 // from eased tweens.
+// The hop starts ON the ground (the wheel just finished rolling), pops up, then
+// falls back and settles — the "и потом падать" beat of the story.
 const BOUNCE_KEYFRAMES: { t: number; y: number; rotate: number; scaleY: number }[] = [
-  { t: 0, y: -1, rotate: -8, scaleY: 1 },
-  { t: 0.45, y: 0, rotate: 0, scaleY: 0.82 }, // first impact, squash
-  { t: 0.58, y: -0.22, rotate: 10, scaleY: 1 }, // first bounce up
-  { t: 0.72, y: 0, rotate: 0, scaleY: 0.92 }, // second impact, smaller squash
-  { t: 0.82, y: -0.08, rotate: -4, scaleY: 1 }, // second bounce up
+  { t: 0, y: 0, rotate: 0, scaleY: 1 },
+  { t: 0.08, y: 0, rotate: 0, scaleY: 0.9 }, // crouch before the hop
+  { t: 0.34, y: -1, rotate: 6, scaleY: 1 }, // peak of the hop
+  { t: 0.6, y: 0, rotate: 0, scaleY: 0.8 }, // the fall lands, big squash
+  { t: 0.74, y: -0.22, rotate: -5, scaleY: 1 }, // small rebound
+  { t: 0.86, y: 0, rotate: 0, scaleY: 0.92 }, // second, softer impact
   { t: 1, y: 0, rotate: 0, scaleY: 1 }, // settled
 ];
 
@@ -103,6 +114,7 @@ export default function ScrollScene({
   const shadowRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const fallbackImgRef = useRef<HTMLImageElement>(null);
 
   // Default to the "safe" static state (last frame + visible text) so SSR/no-JS/
@@ -130,7 +142,8 @@ export default function ScrollScene({
       const shadow = shadowRef.current;
       const canvas = canvasRef.current;
       const text = textRef.current;
-      if (!section || !pin || !stage || !wheel || !shadow || !canvas || !text) return;
+      const backdrop = backdropRef.current;
+      if (!section || !pin || !stage || !wheel || !shadow || !canvas || !text || !backdrop) return;
 
       const ctx = canvas.getContext("2d");
 
@@ -148,6 +161,13 @@ export default function ScrollScene({
             if (settled) return;
             settled = true;
             store[n - 1] = img;
+            // Repaint if this frame is at (or before) the one the canvas currently
+            // wants: covers the very first paint (nothing was loaded when render(0)
+            // ran) and "held" frames upgrading to the real one during slow loads.
+            const wantsIt =
+              (store === introImages && canvasMode === "intro" && n <= lastIntroIndex) ||
+              (store === images && canvasMode === "assembly" && n <= lastDrawnIndex);
+            if (wantsIt) drawCurrentFrame();
             resolve();
           };
           // `load`/`error` fire on network fetch and are the reliable completion
@@ -252,8 +272,12 @@ export default function ScrollScene({
       }
 
       // Which sequence the canvas is currently showing: the intro (baby) during the
-      // opening phases, the assembly sequence from the roll handoff onward.
+      // opening phases, the assembly sequence from the hop handoff onward.
       let canvasMode: "intro" | "assembly" = "intro";
+      // 0..1: how far the headline has faded in (phase D). The assembled stroller
+      // shrinks toward the top edge by TEXT_CLEARANCE_SCALE·textClearance so the
+      // text band at the bottom never overlaps the product.
+      let textClearance = 0;
 
       function drawCurrentFrame() {
         if (!ctx || !stageW || !stageH) return;
@@ -263,7 +287,18 @@ export default function ScrollScene({
             : nearestLoaded(images, lastDrawnIndex);
         if (!img) return;
         ctx.clearRect(0, 0, stageW, stageH);
-        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+        if (canvasMode === "intro") {
+          // Smaller baby vignette, bottom-anchored so the floor line stays put.
+          const w = drawW * INTRO_SCALE;
+          const h = drawH * INTRO_SCALE;
+          ctx.drawImage(img, drawX + (drawW - w) / 2, drawY + (drawH - h), w, h);
+        } else {
+          const s = 1 - TEXT_CLEARANCE_SCALE * textClearance;
+          const w = drawW * s;
+          const h = drawH * s;
+          // Top-anchored: shrinking lifts the stroller away from the bottom text band.
+          ctx.drawImage(img, drawX + (drawW - w) / 2, drawY, w, h);
+        }
       }
 
       layoutStage();
@@ -274,7 +309,7 @@ export default function ScrollScene({
 
       function frameForProgress(p: number) {
         if (p <= PHASE_D_START) {
-          const local = (p - PHASE_B_END) / (PHASE_D_START - PHASE_B_END);
+          const local = (p - HOP_END) / (PHASE_D_START - HOP_END);
           return 1 + local * (95 - 1);
         }
         const local = (p - PHASE_D_START) / (1 - PHASE_D_START);
@@ -284,12 +319,11 @@ export default function ScrollScene({
       function render(p: number) {
         rafId = null;
 
-        // The wheel falls at a VISIBLE spot near the left edge (center ≈ 18% of stage
-        // width), then phase B rolls it from that same x to the center — the phases
-        // share this value so there is no horizontal jump at the A/B boundary.
-        // The roll distance is quantized so the total rotation is a multiple of 120°:
-        // the wheel has 3 spokes, so the img then lands spoke-aligned with frame f001
-        // and the img→canvas swap is seamless in rotation as well as position.
+        // The wheel enters rolling from the left (the baby's side of the vignette)
+        // and travels to center stage. The roll distance is quantized so the total
+        // rotation is a multiple of 120°: the wheel has 3 spokes, so it lands
+        // spoke-aligned with frame f001 and the img→canvas swap after the hop is
+        // seamless in rotation as well as position.
         const circleDiameter = wheelSidePx * CIRCLE_DIAMETER_FRACTION_OF_WHEEL_IMG;
         const spokeStep = (Math.PI * circleDiameter) / 3; // distance per 120° of roll
         const rollDistance = Math.max(1, Math.round((stageW * 0.32) / spokeStep)) * spokeStep;
@@ -305,42 +339,16 @@ export default function ScrollScene({
           gsap.set(wheel, { opacity: 0 });
           gsap.set(shadow, { opacity: 0 });
           gsap.set(text, { opacity: 0, y: 24 });
-        } else if (p < PHASE_A_END) {
-          // Phase A: fall + bounce, in place (at the roll's start position). The
-          // intro's last frame stays underneath and fades out during the drop.
-          const localT = (p - INTRO_END) / (PHASE_A_END - INTRO_END);
-          const { y, rotate, scaleY } = sampleKeyframes(localT);
-          // Fall from fully above the viewport down to the resting line.
-          const fallDistancePx = stageH * 0.55 + wheelSidePx;
+          gsap.set(backdrop, { opacity: 0 });
+        } else if (p < ROLL_END) {
+          // Roll: the SAME wheel continues out of the baby vignette, rolling from
+          // the left to center stage. Rotation = distance / (π·d) · 360 (no slip).
+          // The intro's last frame fades out fast underneath — no lingering ghost.
+          const localT = (p - INTRO_END) / (ROLL_END - INTRO_END);
           canvasMode = "intro";
           lastIntroIndex = INTRO_COUNT;
           drawCurrentFrame();
           gsap.set(canvas, { opacity: 1 - Math.min(1, localT / INTRO_FADE_PORTION) });
-          gsap.set(wheel, {
-            xPercent: -50,
-            yPercent: -50,
-            x: rollStartX,
-            y: y * fallDistancePx,
-            rotation: rotate,
-            scaleY,
-            scaleX: 1,
-            opacity: 1,
-          });
-          // The shadow deepens as the wheel nears the floor (y goes -1 → 0) and
-          // widens with the impact squash; it does NOT rotate with the wheel.
-          gsap.set(shadow, {
-            xPercent: -50,
-            yPercent: -50,
-            x: rollStartX,
-            opacity: 0.35 * (1 + y), // y is negative above ground
-            scaleX: 1 + (1 - scaleY) * 1.4,
-            scaleY: 1,
-          });
-          gsap.set(text, { opacity: 0, y: 24 }); // reset when scrubbing back from phase D
-        } else if (p < PHASE_B_END) {
-          // Phase B: roll left -> right; rotation = distance / (π·d) · 360 for a
-          // no-slip roll, where d is the wheel CIRCLE's diameter (not the img side).
-          const localT = (p - PHASE_A_END) / (PHASE_B_END - PHASE_A_END);
           const x = lerp(rollStartX, 0, localT);
           const distanceTravelled = x - rollStartX;
           const rotationDeg = (distanceTravelled / (Math.PI * circleDiameter)) * 360;
@@ -355,8 +363,38 @@ export default function ScrollScene({
             opacity: 1,
           });
           gsap.set(shadow, { xPercent: -50, yPercent: -50, x, opacity: 0.35, scaleX: 1, scaleY: 1 });
-          gsap.set(canvas, { opacity: 0 });
           gsap.set(text, { opacity: 0, y: 24 }); // reset when scrubbing back from phase D
+          gsap.set(backdrop, { opacity: 0 });
+        } else if (p < HOP_END) {
+          // Hop/fall: at center stage the wheel pops up and falls onto its spot
+          // (crouch → hop → landing squash → settle), staying at x = 0 so it ends
+          // exactly matching frame f001's wheel.
+          const localT = (p - ROLL_END) / (HOP_END - ROLL_END);
+          const { y, rotate, scaleY } = sampleKeyframes(localT);
+          const hopHeightPx = stageH * 0.26;
+          gsap.set(canvas, { opacity: 0 });
+          gsap.set(wheel, {
+            xPercent: -50,
+            yPercent: -50,
+            x: 0,
+            y: y * hopHeightPx,
+            rotation: rotate,
+            scaleY,
+            scaleX: 1,
+            opacity: 1,
+          });
+          // The shadow lightens while the wheel is airborne (y goes 0 → -1 → 0) and
+          // widens with the impact squash; it does NOT rotate with the wheel.
+          gsap.set(shadow, {
+            xPercent: -50,
+            yPercent: -50,
+            x: 0,
+            opacity: 0.35 * (1 + y * 0.8), // y is negative while airborne
+            scaleX: 1 + (1 - scaleY) * 1.4,
+            scaleY: 1,
+          });
+          gsap.set(text, { opacity: 0, y: 24 }); // reset when scrubbing back from phase D
+          gsap.set(backdrop, { opacity: 0 });
         } else {
           // Phase C/D: canvas frame sequence + text fade in during the final stretch.
           // The assembly frames carry their own baked-in ground shadow, so the
@@ -366,16 +404,19 @@ export default function ScrollScene({
           gsap.set(shadow, { opacity: 0 });
           gsap.set(canvas, { opacity: 1 });
 
+          const textProgress = Math.min(1, Math.max(0, (p - PHASE_D_START) / (1 - PHASE_D_START)));
+          textClearance = textProgress;
+
           const frameFloat = frameForProgress(p);
           const nextIndex = Math.min(FRAME_COUNT, Math.max(1, Math.round(frameFloat)));
           lastDrawnIndex = nextIndex;
           drawCurrentFrame();
 
-          const textProgress = Math.min(1, Math.max(0, (p - PHASE_D_START) / (1 - PHASE_D_START)));
           gsap.set(text, {
             opacity: textProgress,
             y: (1 - textProgress) * 24,
           });
+          gsap.set(backdrop, { opacity: textProgress });
         }
       }
 
@@ -488,6 +529,14 @@ export default function ScrollScene({
           )}
         </div>
 
+        {/* Legibility backdrop: a soft cream gradient behind the bottom text band,
+            fading in together with the headline (phase D). */}
+        <div
+          ref={backdropRef}
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-cream via-cream/70 to-transparent"
+          style={{ opacity: textHidden ? 0 : 1 }}
+        />
         <div
           ref={textRef}
           className="relative z-10 mx-auto flex h-full max-w-3xl flex-col items-center justify-end px-4 pb-16 text-center sm:pb-24"
