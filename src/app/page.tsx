@@ -3,7 +3,7 @@ import { getEurRate } from "@/lib/currency";
 import { createServerClient } from "@/lib/supabase/server";
 import { demoCategories, demoProducts, isDemoMode } from "@/lib/demo";
 import type { Category, Product } from "@/lib/types";
-import Hero from "@/components/Hero";
+import ScrollScene from "@/components/ScrollScene";
 import CategoryGrid from "@/components/CategoryGrid";
 import ProductRow from "@/components/ProductRow";
 import BrandStrip from "@/components/BrandStrip";
@@ -100,7 +100,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col gap-12 pb-12">
-      <Hero t={t} />
+      <ScrollScene title={t("hero.title")} subtitle={t("hero.subtitle")} cta={t("hero.cta")} />
       {/* CategoryGrid staggers its own cards with per-card <Reveal> — no outer wrapper here,
           nesting would compound transforms (~32px) and double-observe every card. */}
       <CategoryGrid categories={categoryCards} t={t} />
