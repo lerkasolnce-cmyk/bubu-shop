@@ -100,10 +100,11 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col gap-12 pb-12">
-      <NatureHero title={t("hero.title")} subtitle={t("hero.subtitle")} cta={t("hero.cta")} />
-      {/* CategoryGrid staggers its own cards with per-card <Reveal> — no outer wrapper here,
-          nesting would compound transforms (~32px) and double-observe every card. */}
-      <CategoryGrid categories={categoryCards} t={t} />
+      {/* The category cards live INSIDE the hero: they drop in during the petal
+          transition and stand on the risen wave at the pin's end. */}
+      <NatureHero title={t("hero.title")} subtitle={t("hero.subtitle")} cta={t("hero.cta")}>
+        <CategoryGrid categories={categoryCards} t={t} variant="plain" />
+      </NatureHero>
       <Reveal delay={80}>
         <ProductRow title={t("home.hits")} products={hits} locale={locale} t={t} rate={rate} />
       </Reveal>

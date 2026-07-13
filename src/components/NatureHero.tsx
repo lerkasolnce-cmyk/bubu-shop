@@ -53,11 +53,15 @@ export default function NatureHero({
   subtitle,
   cta,
   ctaHref = "/catalog/strollers-2in1",
+  children,
 }: {
   title: string;
   subtitle: string;
   cta: string;
   ctaHref?: string;
+  // Rendered as an overlay that drops in during the petal transition (the
+  // category cards) and remains standing on the risen wave at the pin's end.
+  children?: React.ReactNode;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const pinRef = useRef<HTMLDivElement>(null);
@@ -65,6 +69,7 @@ export default function NatureHero({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const waveRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
 
   // Default to the "safe" static state (last frame) so SSR/no-JS/reduced-motion
   // users always see a correct, complete hero with zero CLS. Only flipped once
@@ -86,7 +91,11 @@ export default function NatureHero({
       const canvas = canvasRef.current;
       const text = textRef.current;
       const wave = waveRef.current;
+      const cardsWrap = cardsRef.current;
       if (!section || !pin || !stage || !canvas || !text || !wave) return;
+      const cards: HTMLElement[] = cardsWrap
+        ? (gsap.utils.toArray("[data-hero-card]", cardsWrap) as HTMLElement[])
+        : [];
 
       const ctx = canvas.getContext("2d");
 
@@ -256,9 +265,12 @@ export default function NatureHero({
           gsap.set(text, { opacity: 1, y: 0 });
           gsap.set(wave, { yPercent: 100 });
           pin!.style.backgroundColor = `rgb(${BG_FROM[0]}, ${BG_FROM[1]}, ${BG_FROM[2]})`;
+          if (cardsWrap) cardsWrap.style.pointerEvents = "none";
+          cards.forEach((card) => gsap.set(card, { opacity: 0, y: -window.innerHeight * 0.45 }));
         } else {
-          // Exit transition: petals scatter, text fades, the cream wave rises and
-          // the background blends into the page colour for a seamless handover.
+          // Exit transition: petals scatter, text fades, the cream wave rises,
+          // the background blends into the page colour — and the category cards
+          // drop in from above (staggered), landing on the risen wave.
           const t = (p - FRAMES_END) / (1 - FRAMES_END);
           wantedIndex = FRAME_COUNT;
           drawScatter(t);
@@ -267,6 +279,20 @@ export default function NatureHero({
           gsap.set(wave, { yPercent: 100 - Math.min(1, t * 1.15) * 100 });
           const mix = (k: number) => Math.round(BG_FROM[k] + (BG_TO[k] - BG_FROM[k]) * t);
           pin!.style.backgroundColor = `rgb(${mix(0)}, ${mix(1)}, ${mix(2)})`;
+
+          cards.forEach((card, i) => {
+            // Staggered drop: card i starts falling at delay_i and lands softly
+            // (decelerating curve). Scrub-driven, fully reversible.
+            const delay = 0.22 + i * 0.09;
+            const tau = Math.min(1, Math.max(0, (t - delay) / 0.4));
+            const ease = 1 - (1 - tau) * (1 - tau); // ease-out quad
+            gsap.set(card, {
+              opacity: Math.min(1, tau * 1.6),
+              y: -window.innerHeight * 0.45 * (1 - ease),
+              rotation: (hash(i + 7) - 0.5) * 6 * (1 - ease),
+            });
+          });
+          if (cardsWrap) cardsWrap.style.pointerEvents = t > 0.85 ? "auto" : "none";
         }
       }
 
@@ -359,6 +385,18 @@ export default function NatureHero({
           </svg>
           <div className="h-full w-full bg-cream" />
         </div>
+
+        {/* Category cards: drop in during the petal transition and stay standing
+            on the risen wave (visible immediately in the static fallback). */}
+        {children && (
+          <div
+            ref={cardsRef}
+            className="absolute inset-x-0 bottom-0 z-20 pb-[7vh]"
+            style={{ pointerEvents: animated ? "none" : "auto" }}
+          >
+            {children}
+          </div>
+        )}
 
         {/* Persistent text overlay on the calm sky area (per the reference mock):
             top-centered on small screens, top-left on large ones. */}

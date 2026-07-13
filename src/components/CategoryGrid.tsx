@@ -79,32 +79,47 @@ function CategoryIcon({ slug }: { slug: string }) {
 export default function CategoryGrid({
   categories,
   t,
+  variant = "reveal",
 }: {
   categories: CategoryCard[];
   t: (key: string) => string;
+  // "reveal": standalone section with per-card IntersectionObserver reveals.
+  // "plain": bare cards tagged data-hero-card — NatureHero drives their drop-in
+  // itself, so Reveal's own transitions must not fight it.
+  variant?: "reveal" | "plain";
 }) {
   if (categories.length === 0) return null;
 
+  const cards = categories.map((cat, i) => {
+    const card = (
+      <Link
+        href={`/catalog/${cat.slug}`}
+        className="flex h-full flex-col items-center gap-2 rounded-lg border border-blush/40 bg-white p-4 text-center transition hover:shadow-md"
+      >
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-mint/40 text-ink">
+          <CategoryIcon slug={cat.slug} />
+        </span>
+        <span className="text-sm font-semibold text-ink">{cat.name}</span>
+        <span className="text-xs text-ink/50">
+          {cat.count} {t(`category.products${pluralKey(cat.count)}`)}
+        </span>
+      </Link>
+    );
+
+    return variant === "plain" ? (
+      <div key={cat.slug} data-hero-card className="h-full">
+        {card}
+      </div>
+    ) : (
+      <Reveal key={cat.slug} delay={i * 60} className="h-full">
+        {card}
+      </Reveal>
+    );
+  });
+
   return (
     <section className="mx-auto w-full max-w-6xl px-4">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {categories.map((cat, i) => (
-          <Reveal key={cat.slug} delay={i * 60} className="h-full">
-            <Link
-              href={`/catalog/${cat.slug}`}
-              className="flex h-full flex-col items-center gap-2 rounded-lg border border-blush/40 bg-white p-4 text-center transition hover:shadow-md"
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-mint/40 text-ink">
-                <CategoryIcon slug={cat.slug} />
-              </span>
-              <span className="text-sm font-semibold text-ink">{cat.name}</span>
-              <span className="text-xs text-ink/50">
-                {cat.count} {t(`category.products${pluralKey(cat.count)}`)}
-              </span>
-            </Link>
-          </Reveal>
-        ))}
-      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">{cards}</div>
     </section>
   );
 }
