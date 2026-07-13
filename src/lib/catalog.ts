@@ -9,7 +9,7 @@ export type SortKey = "new" | "price_asc" | "price_desc" | "hits";
 const SORT_KEYS: SortKey[] = ["new", "price_asc", "price_desc", "hits"];
 
 export type ProductQuery = {
-  categoryId?: string;
+  categoryIds?: string[];
   q?: string;
   brands?: string[];
   minPrice?: number;
@@ -31,7 +31,10 @@ export function sanitizeSearchTerm(q: string): string {
 /** In-memory filtering over demo data — preview mode only, mirrors the DB query semantics. */
 function fetchProductsDemo(query: ProductQuery): { items: Product[]; total: number } {
   let items = demoProducts.slice();
-  if (query.categoryId) items = items.filter((p) => p.category_id === query.categoryId);
+  if (query.categoryIds?.length) {
+    const set = new Set(query.categoryIds);
+    items = items.filter((p) => p.category_id != null && set.has(p.category_id));
+  }
   if (query.brands?.length) {
     const set = new Set(query.brands.map((b) => b.toLowerCase()));
     items = items.filter((p) => set.has(p.brand.toLowerCase()));
@@ -66,7 +69,7 @@ export async function fetchProducts(query: ProductQuery): Promise<{ items: Produ
     const supabase = await createServerClient();
     let builder = supabase.from("products").select("*", { count: "exact" });
 
-    if (query.categoryId) builder = builder.eq("category_id", query.categoryId);
+    if (query.categoryIds?.length) builder = builder.in("category_id", query.categoryIds);
     if (query.brands && query.brands.length > 0) {
       // The URL carries lowercase brand values (?brand=anex,cybex) while the DB stores "Anex" —
       // match case-insensitively with exact ilike (no wildcards) in an OR-group.
@@ -120,17 +123,19 @@ export async function fetchProducts(query: ProductQuery): Promise<{ items: Produ
   }
 }
 
-/** Distinct brands, optionally scoped to a category. Fail-soft -> []. */
-export async function fetchBrands(categoryId?: string): Promise<string[]> {
+/** Distinct brands, optionally scoped to a set of categories. Fail-soft -> []. */
+export async function fetchBrands(categoryIds?: string[]): Promise<string[]> {
   if (isDemoMode()) {
-    const scoped = categoryId ? demoProducts.filter((p) => p.category_id === categoryId) : demoProducts;
+    const scoped = categoryIds?.length
+      ? demoProducts.filter((p) => p.category_id != null && categoryIds.includes(p.category_id))
+      : demoProducts;
     return Array.from(new Set(scoped.map((p) => p.brand))).sort((a, b) => a.localeCompare(b));
   }
 
   try {
     const supabase = await createServerClient();
     let builder = supabase.from("products").select("brand");
-    if (categoryId) builder = builder.eq("category_id", categoryId);
+    if (categoryIds?.length) builder = builder.in("category_id", categoryIds);
 
     const { data, error } = await builder;
     if (error || !data) {
@@ -173,7 +178,7 @@ function firstParam(value: string | string[] | undefined): string | undefined {
 
 export function parseQueryFromSearchParams(
   sp: Record<string, string | string[] | undefined>
-): Omit<ProductQuery, "categoryId"> {
+): Omit<ProductQuery, "categoryIds"> {
   const qRaw = firstParam(sp.q)?.trim();
   const q = qRaw ? qRaw : undefined;
 

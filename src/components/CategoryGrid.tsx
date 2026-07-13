@@ -23,6 +23,7 @@ function CategoryIcon({ slug }: { slug: string }) {
   };
 
   switch (slug) {
+    case "strollers":
     case "strollers-2in1":
       return (
         <svg {...common}>

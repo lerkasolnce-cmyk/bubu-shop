@@ -48,34 +48,40 @@ async function getSaleProducts(): Promise<Product[]> {
 }
 
 async function getCategoriesWithCounts(): Promise<(Category & { count: number })[]> {
-  if (isDemoMode())
-    return demoCategories.map((cat) => ({
-      ...cat,
-      count: demoProducts.filter((p) => p.category_id === cat.id).length,
-    }));
+  if (isDemoMode()) {
+    const roots = demoCategories.filter((c) => c.parent_id === null);
+    return roots.map((cat) => {
+      const childIds = demoCategories.filter((c) => c.parent_id === cat.id).map((c) => c.id);
+      const ids = new Set([cat.id, ...childIds]);
+      return { ...cat, count: demoProducts.filter((p) => p.category_id != null && ids.has(p.category_id)).length };
+    });
+  }
 
   try {
     const supabase = await createServerClient();
-    const { data: categories, error } = await supabase
+    const { data: allCategories, error } = await supabase
       .from("categories")
       .select("*")
-      .is("parent_id", null)
       .order("sort", { ascending: true });
 
-    if (error || !categories) return [];
+    if (error || !allCategories) return [];
 
-    // N=5 categories — per-category count queries are simple and fine here.
+    const roots = allCategories.filter((c) => c.parent_id === null);
+
+    // N=3 root categories — per-category count queries (root + its children) are
+    // simple and fine here.
     const counts = await Promise.all(
-      categories.map(async (cat) => {
+      roots.map(async (cat) => {
+        const childIds = allCategories.filter((c) => c.parent_id === cat.id).map((c) => c.id);
         const { count } = await supabase
           .from("products")
           .select("*", { count: "exact", head: true })
-          .eq("category_id", cat.id);
+          .in("category_id", [cat.id, ...childIds]);
         return count ?? 0;
       })
     );
 
-    return categories.map((cat, i) => ({ ...cat, count: counts[i] })) as (Category & { count: number })[];
+    return roots.map((cat, i) => ({ ...cat, count: counts[i] })) as (Category & { count: number })[];
   } catch {
     return [];
   }

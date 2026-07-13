@@ -10,7 +10,7 @@ export const demoCategories: Category[] = seedCategories.map((c) => ({
   slug: c.slug,
   name_ua: c.name_ua,
   name_ru: c.name_ru,
-  parent_id: null,
+  parent_id: c.parent_slug ? `demo-${c.parent_slug}` : null,
   sort: c.sort,
 }));
 

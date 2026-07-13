@@ -58,19 +58,49 @@ async function main() {
     auth: { persistSession: false },
   });
 
-  const { data: upsertedCategories, error: categoriesError } = await supabase
+  // Two-level tree: roots first (parent_id null), then children with parent_id resolved
+  // by parent_slug lookup against the just-upserted roots — a category must exist before
+  // it can be referenced as a parent.
+  const roots = categories.filter((c) => !c.parent_slug);
+  const children = categories.filter((c) => c.parent_slug);
+
+  const rootRows = roots.map(({ parent_slug: _parent_slug, ...rest }) => ({ ...rest, parent_id: null }));
+
+  const { data: upsertedRoots, error: rootsError } = await supabase
     .from("categories")
-    .upsert(categories, { onConflict: "slug" })
+    .upsert(rootRows, { onConflict: "slug" })
     .select("id, slug");
 
-  if (categoriesError) {
-    console.error("Помилка запису категорій:", categoriesError.message);
+  if (rootsError) {
+    console.error("Помилка запису кореневих категорій:", rootsError.message);
     process.exit(1);
   }
 
   const categoryIdBySlug = new Map<string, string>(
-    (upsertedCategories ?? []).map((c) => [c.slug, c.id])
+    (upsertedRoots ?? []).map((c) => [c.slug, c.id])
   );
+
+  const childRows = children.map(({ parent_slug, ...rest }) => {
+    const parent_id = parent_slug ? categoryIdBySlug.get(parent_slug) ?? null : null;
+    if (parent_slug && !parent_id) {
+      console.warn(`Попередження: батьківську категорію "${parent_slug}" не знайдено для "${rest.slug}"`);
+    }
+    return { ...rest, parent_id };
+  });
+
+  const { data: upsertedChildren, error: childrenError } = await supabase
+    .from("categories")
+    .upsert(childRows, { onConflict: "slug" })
+    .select("id, slug");
+
+  if (childrenError) {
+    console.error("Помилка запису дочірніх категорій:", childrenError.message);
+    process.exit(1);
+  }
+
+  for (const c of upsertedChildren ?? []) {
+    categoryIdBySlug.set(c.slug, c.id);
+  }
 
   const productRows = products.map(({ category_slug, ...rest }) => {
     const category_id = categoryIdBySlug.get(category_slug) ?? null;

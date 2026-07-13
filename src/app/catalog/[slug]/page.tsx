@@ -26,6 +26,36 @@ async function getCategoryBySlug(slug: string): Promise<Category | null> {
   }
 }
 
+async function getChildCategories(parentId: string): Promise<Category[]> {
+  if (isDemoMode()) return demoCategories.filter((c) => c.parent_id === parentId);
+
+  try {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("parent_id", parentId)
+      .order("sort", { ascending: true });
+    if (error || !data) return [];
+    return data as Category[];
+  } catch {
+    return [];
+  }
+}
+
+async function getParentCategory(parentId: string): Promise<Category | null> {
+  if (isDemoMode()) return demoCategories.find((c) => c.id === parentId) ?? null;
+
+  try {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase.from("categories").select("*").eq("id", parentId).maybeSingle();
+    if (error || !data) return null;
+    return data as Category;
+  } catch {
+    return null;
+  }
+}
+
 function humanizeSlug(slug: string): string {
   return slug.replace(/-/g, " ");
 }
@@ -60,10 +90,18 @@ export default async function CategoryPage({
   const locale = await getLocale();
   const t = getT(locale);
 
+  // A root category shows its own products plus every child's; a child category shows
+  // only its own and surfaces a back-link chip to its parent (2-level tree — see brief).
+  const [children, parent] = await Promise.all([
+    category && !category.parent_id ? getChildCategories(category.id) : Promise.resolve<Category[]>([]),
+    category?.parent_id ? getParentCategory(category.parent_id) : Promise.resolve<Category | null>(null),
+  ]);
+  const categoryIds = category ? [category.id, ...children.map((c) => c.id)] : undefined;
+
   const parsed = parseQueryFromSearchParams(sp);
   const [{ items, total }, brands, rate] = await Promise.all([
-    fetchProducts({ ...parsed, categoryId: category?.id }),
-    fetchBrands(category?.id),
+    fetchProducts({ ...parsed, categoryIds }),
+    fetchBrands(categoryIds),
     locale === "it" ? getEurRate() : Promise.resolve(null),
   ]);
 
@@ -83,6 +121,30 @@ export default async function CategoryPage({
       <p className="mt-1 text-sm text-ink/60">
         {total} {t(`category.products${pluralKey(total)}`)}
       </p>
+
+      {children.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {children.map((child) => (
+            <Link
+              key={child.id}
+              href={`/catalog/${child.slug}`}
+              className="rounded-full bg-mint/40 px-4 py-1.5 text-sm font-medium text-ink hover:bg-mint"
+            >
+              {pick(child, "name", locale)}
+            </Link>
+          ))}
+        </div>
+      )}
+      {parent && (
+        <div className="mt-3">
+          <Link
+            href={`/catalog/${parent.slug}`}
+            className="inline-block rounded-full bg-mint/40 px-4 py-1.5 text-sm font-medium text-ink hover:bg-mint"
+          >
+            ← {pick(parent, "name", locale)}
+          </Link>
+        </div>
+      )}
 
       <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
         <aside className="lg:w-64 lg:shrink-0">

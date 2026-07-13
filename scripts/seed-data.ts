@@ -5,6 +5,8 @@ export interface CategorySeed {
   name_ua: string;
   name_ru: string;
   sort: number;
+  /** Slug of the parent category, if this is a child (2-level tree, root when omitted). */
+  parent_slug?: string;
 }
 
 export interface ProductSeed {
@@ -25,11 +27,27 @@ export interface ProductSeed {
 }
 
 export const categories: CategorySeed[] = [
-  { slug: "strollers-2in1", name_ua: "Коляски 2 в 1", name_ru: "Коляски 2 в 1", sort: 1 },
-  { slug: "strollers-3in1", name_ua: "Коляски 3 в 1", name_ru: "Коляски 3 в 1", sort: 2 },
-  { slug: "strollers-buggy", name_ua: "Прогулянкові коляски", name_ru: "Прогулочные коляски", sort: 3 },
-  { slug: "car-seats", name_ua: "Автокрісла", name_ru: "Автокресла", sort: 4 },
-  { slug: "accessories", name_ua: "Аксесуари", name_ru: "Аксессуары", sort: 5 },
+  // --- Roots ---
+  { slug: "strollers", name_ua: "Коляски", name_ru: "Коляски", sort: 1 },
+  { slug: "car-seats", name_ua: "Автокрісла", name_ru: "Автокресла", sort: 2 },
+  { slug: "accessories", name_ua: "Аксесуари", name_ru: "Аксессуары", sort: 3 },
+
+  // --- Children of strollers ---
+  { slug: "strollers-2in1", name_ua: "Коляски 2 в 1", name_ru: "Коляски 2 в 1", sort: 1, parent_slug: "strollers" },
+  { slug: "strollers-3in1", name_ua: "Коляски 3 в 1", name_ru: "Коляски 3 в 1", sort: 2, parent_slug: "strollers" },
+  { slug: "strollers-buggy", name_ua: "Прогулянкові коляски", name_ru: "Прогулочные коляски", sort: 3, parent_slug: "strollers" },
+  { slug: "strollers-twins", name_ua: "Коляски для двійні", name_ru: "Коляски для двойни", sort: 4, parent_slug: "strollers" },
+
+  // --- Children of car-seats ---
+  { slug: "car-seats-0plus", name_ua: "Автокрісла 0+", name_ru: "Автокресла 0+", sort: 1, parent_slug: "car-seats" },
+  { slug: "car-seats-isize", name_ua: "Автокрісла i-Size", name_ru: "Автокресла i-Size", sort: 2, parent_slug: "car-seats" },
+  { slug: "car-seats-boosters", name_ua: "Бустери", name_ru: "Бустеры", sort: 3, parent_slug: "car-seats" },
+  { slug: "car-seat-bases", name_ua: "Бази ISOFIX", name_ru: "Базы ISOFIX", sort: 4, parent_slug: "car-seats" },
+
+  // --- Children of accessories ---
+  { slug: "accessories-stroller", name_ua: "Аксесуари для колясок", name_ru: "Аксессуары для колясок", sort: 1, parent_slug: "accessories" },
+  { slug: "footmuffs", name_ua: "Конверти та чохли", name_ru: "Конверты и чехлы", sort: 2, parent_slug: "accessories" },
+  { slug: "accessories-carseat", name_ua: "Аксесуари для автокрісел", name_ru: "Аксессуары для автокресел", sort: 3, parent_slug: "accessories" },
 ];
 
 function strollerSpecs(
@@ -510,7 +528,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Cybex Cloud T i-Size — автокресло-люлька для самых маленьких с поворотом на 360° и встроенным линейным амортизатором удара. Устанавливается только на базу ISOFIX, а функция укачивания успокаивает малыша даже в припаркованном авто.",
     brand: "Cybex",
-    category_slug: "car-seats",
+    category_slug: "car-seats-0plus",
     price: 33000,
     old_price: null,
     stock_status: "in_stock",
@@ -528,7 +546,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Cybex Cloud T i-Size — автокресло-люлька для самых маленьких с поворотом на 360° и встроенным линейным амортизатором удара. Устанавливается только на базу ISOFIX, а функция укачивания успокаивает малыша даже в припаркованном авто.",
     brand: "Cybex",
-    category_slug: "car-seats",
+    category_slug: "car-seats-0plus",
     price: 33000,
     old_price: null,
     stock_status: "in_stock",
@@ -547,7 +565,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Cybex Sirona T i-Size растёт вместе с ребёнком от рождения до 4 лет и поворачивается на 360° для удобной посадки без наклона над салоном. Противоротационная опора и боковая система защиты обеспечивают дополнительную безопасность при боковом ударе.",
     brand: "Cybex",
-    category_slug: "car-seats",
+    category_slug: "car-seats-isize",
     price: 41000,
     old_price: 46000,
     stock_status: "in_stock",
@@ -565,7 +583,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Cybex Sirona T i-Size растёт вместе с ребёнком от рождения до 4 лет и поворачивается на 360° для удобной посадки без наклона над салоном. Противоротационная опора и боковая система защиты обеспечивают дополнительную безопасность при боковом ударе.",
     brand: "Cybex",
-    category_slug: "car-seats",
+    category_slug: "car-seats-isize",
     price: 46000,
     old_price: null,
     stock_status: "preorder",
@@ -622,7 +640,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Cybex Aton B2 — лёгкое автокресло группы 0+ для первых поездок младенца, совместимое с большинством шасси колясок Cybex и Anex через фирменные адаптеры. Линейный амортизатор удара в зоне головы повышает защиту при боковом столкновении.",
     brand: "Cybex",
-    category_slug: "car-seats",
+    category_slug: "car-seats-0plus",
     price: 21000,
     old_price: null,
     stock_status: "in_stock",
@@ -641,7 +659,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Cybex Pallas G i-Size рассчитано на детей от 3 до 12 лет и трансформируется из кресла со спинкой в бустер без спинки по мере взросления ребёнка. Регулировка по 12 позициям высоты подголовника подстраивается под рост без замены кресла.",
     brand: "Cybex",
-    category_slug: "car-seats",
+    category_slug: "car-seats-boosters",
     price: 27000,
     old_price: null,
     stock_status: "out_of_stock",
@@ -865,7 +883,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Прозрачный дождевик из ПВХ подходит для большинства прогулочных и модульных колясок. Вентиляционные отверстия предотвращают запотевание, а компактное складывание позволяет всегда носить его в корзине коляски про запас.",
     brand: "Anex",
-    category_slug: "accessories",
+    category_slug: "accessories-stroller",
     price: 450,
     old_price: null,
     stock_status: "in_stock",
@@ -883,7 +901,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Мелкая сетка защищает ребёнка от насекомых на прогулке, не мешая циркуляции воздуха. Легко натягивается на капюшон и крепится резинками, а складывается в небольшой мешочек для хранения.",
     brand: "Anex",
-    category_slug: "accessories",
+    category_slug: "accessories-stroller",
     price: 350,
     old_price: null,
     stock_status: "in_stock",
@@ -901,7 +919,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Утеплённый конверт с мембранной внешней тканью и меховой подкладкой сохраняет тепло в самые холодные дни. Двусторонняя молния позволяет регулировать длину и легко пристёгивать конверт к ремням безопасности.",
     brand: "Anex",
-    category_slug: "accessories",
+    category_slug: "footmuffs",
     price: 2200,
     old_price: null,
     stock_status: "in_stock",
@@ -919,7 +937,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Фирменный дождевик Cybex скроен по форме прогулочных блоков бренда для плотного прилегания без зазоров. Прозрачный материал не искажает обзор ребёнку, а небольшой вес не утяжеляет сложенную коляску.",
     brand: "Cybex",
-    category_slug: "accessories",
+    category_slug: "accessories-stroller",
     price: 900,
     old_price: null,
     stock_status: "in_stock",
@@ -937,7 +955,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Подстаканник крепится на поручень коляски за считаные секунды и удерживает бутылочку или чашку кофе без раскачивания. Снимается для мытья в посудомоечной машине.",
     brand: "Cybex",
-    category_slug: "accessories",
+    category_slug: "accessories-stroller",
     price: 550,
     old_price: null,
     stock_status: "in_stock",
@@ -955,7 +973,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Дополнительный козырёк с UV-защитой крепится поверх штатного капюшона и затеняет лицо ребёнка в солнечные дни. Гибкий каркас позволяет настроить угол наклона под высоту солнца.",
     brand: "Cybex",
-    category_slug: "accessories",
+    category_slug: "accessories-stroller",
     price: 800,
     old_price: null,
     stock_status: "in_stock",
@@ -973,7 +991,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Вместительная сумка с креплениями на ручку коляски имеет отдельные отделения для подгузников, бутылочек и личных вещей. В комплекте — водоотталкивающий коврик для пеленания.",
     brand: "Espiro",
-    category_slug: "accessories",
+    category_slug: "accessories-stroller",
     price: 1800,
     old_price: null,
     stock_status: "in_stock",
@@ -991,7 +1009,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Мягкий вкладыш поддерживает голову и спину новорождённого в прогулочном блоке или автокресле, пока ребёнок не подрастёт. Съёмный чехол легко стирать при низкой температуре.",
     brand: "Espiro",
-    category_slug: "accessories",
+    category_slug: "accessories-carseat",
     price: 950,
     old_price: null,
     stock_status: "in_stock",
@@ -1009,7 +1027,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Органайзер с несколькими карманами крепится на поручень и держит под рукой телефон, ключи и салфетки во время прогулки. Светоотражающие полоски добавляют видимости в тёмное время суток.",
     brand: "Bubu",
-    category_slug: "accessories",
+    category_slug: "accessories-stroller",
     price: 650,
     old_price: null,
     stock_status: "in_stock",
@@ -1027,7 +1045,7 @@ export const products: ProductSeed[] = [
     description_ru:
       "Пара адаптеров позволяет установить автокресло группы 0+ на прогулочное шасси, превращая коляску 2 в 1 в полноценный комплект 3 в 1. Фиксируется щелчком и снимается без инструментов.",
     brand: "Bubu",
-    category_slug: "accessories",
+    category_slug: "accessories-carseat",
     price: 1200,
     old_price: null,
     stock_status: "in_stock",

@@ -10,7 +10,7 @@ import MobileMenu from "./MobileMenu";
 
 async function getRootCategories(): Promise<Category[]> {
   // Supabase project may not exist yet (no env) — demo data for design preview.
-  if (isDemoMode()) return demoCategories;
+  if (isDemoMode()) return demoCategories.filter((c) => c.parent_id === null);
 
   try {
     const supabase = await createServerClient();
