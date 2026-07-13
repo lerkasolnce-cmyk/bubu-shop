@@ -402,7 +402,7 @@ export default function NatureHero({
             top-centered on small screens, top-left on large ones. */}
         <div
           ref={textRef}
-          className="relative z-10 mx-auto flex h-full max-w-6xl flex-col items-center px-4 pt-[10vh] text-center lg:items-start lg:pl-12 lg:text-left"
+          className="relative z-10 mx-auto flex h-full max-w-6xl flex-col items-center px-4 pt-[max(10vh,8.5rem)] text-center lg:items-start lg:pl-12 lg:text-left"
         >
           <h1 className="max-w-xl text-3xl font-extrabold leading-tight text-ink sm:text-5xl">
             {title}
