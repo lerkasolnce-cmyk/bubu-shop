@@ -7,6 +7,7 @@
   "nav.delivery": "Consegna",
   "nav.about": "Chi siamo",
   "nav.contacts": "Contatti",
+  "nav.sale": "Offerte",
   "footer.followUs": "Seguici su Instagram",
   "footer.rights": "Tutti i diritti riservati",
   "common.addToCart": "Aggiungi al carrello",
@@ -278,5 +279,6 @@
   "seo.contacts.description": "Contatti del negozio bu-bu a Odessa: telefono, Instagram.",
   "notFound.title": "Pagina non trovata",
   "notFound.text": "Sembra che questa pagina si sia persa durante una passeggiata. Prova a tornare alla home.",
-  "notFound.cta": "Torna alla home"
+  "notFound.cta": "Torna alla home",
+  "sale.title": "Offerte"
 }

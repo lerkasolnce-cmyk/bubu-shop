@@ -68,6 +68,61 @@ function CategoryIcon({ slug }: { slug: string }) {
           <path d="M9 12a3 3 0 0 0 6 0" />
         </svg>
       );
+    case "nursery":
+      return (
+        <svg {...common}>
+          <path d="M4 20V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v11" />
+          <path d="M4 15h16" />
+          <path d="M7 7V4M17 7V4" />
+        </svg>
+      );
+    case "highchairs":
+      return (
+        <svg {...common}>
+          <path d="M7 4h9l-1 7H8L7 4Z" />
+          <path d="M7.5 11 6 20M15.5 11 17 20" />
+          <path d="M6.5 15.5h11" />
+        </svg>
+      );
+    case "kids-transport":
+      return (
+        <svg {...common}>
+          <circle cx="6" cy="17" r="3" />
+          <circle cx="18" cy="17" r="3" />
+          <path d="M6 17 9 8h3l3 4h4" />
+          <path d="M9 8 8 6H6" />
+        </svg>
+      );
+    case "feeding":
+      return (
+        <svg {...common}>
+          <path d="M9 3h4v4H9z" />
+          <path d="M8 7h6l1 3v9a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-9l1-3Z" />
+          <path d="M8 13h6" />
+        </svg>
+      );
+    case "hygiene":
+      return (
+        <svg {...common}>
+          <path d="M12 3c2 2.5 4 5 4 8a4 4 0 0 1-8 0c0-3 2-5.5 4-8Z" />
+          <path d="M5 19c0-1.5 1-3 3-3h8c2 0 3 1.5 3 3" />
+          <path d="M4 21h16" />
+        </svg>
+      );
+    case "toys":
+      return (
+        <svg {...common}>
+          <circle cx="9" cy="9" r="4" />
+          <circle cx="16" cy="14" r="4" />
+          <path d="M11.5 11.5 13.5 13.5" />
+        </svg>
+      );
+    case "clothing":
+      return (
+        <svg {...common}>
+          <path d="M9 4 5 6.5 6.5 9 8 8v11h8V8l1.5 1L19 6.5 15 4a3 3 0 0 1-6 0Z" />
+        </svg>
+      );
     default:
       return (
         <svg {...common}>

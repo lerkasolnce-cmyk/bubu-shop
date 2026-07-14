@@ -7,6 +7,7 @@
   "nav.delivery": "Delivery",
   "nav.about": "About us",
   "nav.contacts": "Contacts",
+  "nav.sale": "Sale",
   "footer.followUs": "Follow us on Instagram",
   "footer.rights": "All rights reserved",
   "common.addToCart": "Add to cart",
@@ -278,5 +279,6 @@
   "seo.contacts.description": "Contacts for bu-bu store in Odesa: phone, Instagram.",
   "notFound.title": "Page not found",
   "notFound.text": "Looks like this page wandered off on a walk. Try heading back home.",
-  "notFound.cta": "Go home"
+  "notFound.cta": "Go home",
+  "sale.title": "Sale"
 }

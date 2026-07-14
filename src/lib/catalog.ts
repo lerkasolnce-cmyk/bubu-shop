@@ -15,6 +15,7 @@ export type ProductQuery = {
   minPrice?: number;
   maxPrice?: number;
   inStockOnly?: boolean;
+  saleOnly?: boolean;
   sort: SortKey;
   page: number; // 1-based
 };
@@ -42,6 +43,7 @@ function fetchProductsDemo(query: ProductQuery): { items: Product[]; total: numb
   if (query.minPrice != null) items = items.filter((p) => p.price >= query.minPrice!);
   if (query.maxPrice != null) items = items.filter((p) => p.price <= query.maxPrice!);
   if (query.inStockOnly) items = items.filter((p) => p.stock_status === "in_stock");
+  if (query.saleOnly) items = items.filter((p) => p.is_sale);
   const term = query.q ? sanitizeSearchTerm(query.q).toLowerCase() : "";
   if (term) items = items.filter((p) => (p.name_ua + " " + p.name_ru).toLowerCase().includes(term));
 
@@ -84,6 +86,7 @@ export async function fetchProducts(query: ProductQuery): Promise<{ items: Produ
     if (query.minPrice != null) builder = builder.gte("price", query.minPrice);
     if (query.maxPrice != null) builder = builder.lte("price", query.maxPrice);
     if (query.inStockOnly) builder = builder.eq("stock_status", "in_stock");
+    if (query.saleOnly) builder = builder.eq("is_sale", true);
 
     const term = query.q ? sanitizeSearchTerm(query.q) : "";
     if (term) {

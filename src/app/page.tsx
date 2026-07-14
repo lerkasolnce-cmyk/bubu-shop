@@ -50,11 +50,13 @@ async function getSaleProducts(): Promise<Product[]> {
 async function getCategoriesWithCounts(): Promise<(Category & { count: number })[]> {
   if (isDemoMode()) {
     const roots = demoCategories.filter((c) => c.parent_id === null);
-    return roots.map((cat) => {
-      const childIds = demoCategories.filter((c) => c.parent_id === cat.id).map((c) => c.id);
-      const ids = new Set([cat.id, ...childIds]);
-      return { ...cat, count: demoProducts.filter((p) => p.category_id != null && ids.has(p.category_id)).length };
-    });
+    return roots
+      .map((cat) => {
+        const childIds = demoCategories.filter((c) => c.parent_id === cat.id).map((c) => c.id);
+        const ids = new Set([cat.id, ...childIds]);
+        return { ...cat, count: demoProducts.filter((p) => p.category_id != null && ids.has(p.category_id)).length };
+      })
+      .filter((cat) => cat.count > 0);
   }
 
   try {
@@ -81,7 +83,9 @@ async function getCategoriesWithCounts(): Promise<(Category & { count: number })
       })
     );
 
-    return roots.map((cat, i) => ({ ...cat, count: counts[i] })) as (Category & { count: number })[];
+    return roots
+      .map((cat, i) => ({ ...cat, count: counts[i] }))
+      .filter((cat) => cat.count > 0) as (Category & { count: number })[];
   } catch {
     return [];
   }

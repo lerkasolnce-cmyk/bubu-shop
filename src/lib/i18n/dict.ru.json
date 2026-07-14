@@ -7,6 +7,7 @@
   "nav.delivery": "Доставка",
   "nav.about": "О нас",
   "nav.contacts": "Контакты",
+  "nav.sale": "Акции",
   "footer.followUs": "Мы в Instagram",
   "footer.rights": "Все права защищены",
   "common.addToCart": "В корзину",
@@ -278,5 +279,6 @@
   "seo.contacts.description": "Контакты магазина bu-bu в Одессе: телефон, Instagram.",
   "notFound.title": "Страница не найдена",
   "notFound.text": "Похоже, эта страница потерялась на прогулке. Попробуйте вернуться на главную.",
-  "notFound.cta": "На главную"
+  "notFound.cta": "На главную",
+  "sale.title": "Скидки и акции"
 }

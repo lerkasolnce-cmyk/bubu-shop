@@ -35,6 +35,7 @@ export default async function Header() {
   const phoneHref = telHref(phone);
 
   const navLinks = [
+    { href: "/sale", label: t("nav.sale") },
     { href: "/delivery", label: t("nav.delivery") },
     { href: "/about", label: t("nav.about") },
     { href: "/contacts", label: t("nav.contacts") },
