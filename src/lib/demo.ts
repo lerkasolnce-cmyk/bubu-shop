@@ -19,6 +19,8 @@ export const demoProducts: Product[] = seedProducts.map((p) => ({
   slug: p.slug,
   name_ua: p.name_ua,
   name_ru: p.name_ru,
+  name_it: p.name_it ?? null,
+  name_en: p.name_en ?? null,
   description_ua: p.description_ua,
   description_ru: p.description_ru,
   brand: p.brand,

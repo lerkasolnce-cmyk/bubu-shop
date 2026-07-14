@@ -16,6 +16,10 @@ export interface ProductSeed {
   slug: string;
   name_ua: string;
   name_ru: string;
+  /** IT/EN names are derived from name_ua (see localizeName) so all 4 locales show a
+   *  translated product name instead of falling back to Ukrainian. */
+  name_it?: string;
+  name_en?: string;
   description_ua: string;
   description_ru: string;
   brand: string;
@@ -100,6 +104,88 @@ export const categories: CategorySeed[] = [
   { slug: "outerwear", name_ua: "Верхній одяг", name_ru: "Верхняя одежда", sort: 3, parent_slug: "clothing" },
 ];
 
+// --- Localized product names -------------------------------------------------
+// Product names are formulaic: "<noun> <Brand Model> [N в N] (<colour>)". Brand,
+// model and colour are language-neutral (Latin script), so localizing a name only
+// means translating the leading noun phrase and the "N в N" configuration token.
+// This fills name_it / name_en for every product so IT/EN shoppers see a translated
+// name rather than the Ukrainian fallback.
+const NOUN_TRANSLATIONS: Record<string, { en: string; it: string }> = {
+  "Коляска": { en: "Stroller", it: "Passeggino" },
+  "Коляска для двійні": { en: "Twin stroller", it: "Passeggino gemellare" },
+  "Автокрісло": { en: "Car seat", it: "Seggiolino auto" },
+  "Автокрісло-бустер": { en: "Booster car seat", it: "Seggiolino auto booster" },
+  "База ISOFIX": { en: "ISOFIX base", it: "Base ISOFIX" },
+  "Адаптер універсальний для автокрісла": {
+    en: "Universal car-seat adapter",
+    it: "Adattatore universale per seggiolino",
+  },
+  "Сумка для мами": { en: "Changing bag", it: "Borsa fasciatoio" },
+  "Дорожня сумка для коляски": { en: "Stroller travel bag", it: "Borsa da viaggio per passeggino" },
+  "Гачок для сумок на коляску": { en: "Stroller bag hook", it: "Gancio per borse da passeggino" },
+  "Дощовик універсальний": { en: "Universal rain cover", it: "Parapioggia universale" },
+  "Дощовик для колясок": { en: "Stroller rain cover", it: "Parapioggia per passeggino" },
+  "Москітна сітка універсальна": { en: "Universal mosquito net", it: "Zanzariera universale" },
+  "Москітна сітка": { en: "Mosquito net", it: "Zanzariera" },
+  "Підстаканник універсальний": { en: "Universal cup holder", it: "Portabicchiere universale" },
+  "Підстаканник": { en: "Cup holder", it: "Portabicchiere" },
+  "Сонцезахисний козирок": { en: "Sun canopy", it: "Parasole" },
+  "Органайзер на ручку коляски": { en: "Stroller handlebar organizer", it: "Organizer per manico del passeggino" },
+  "Органайзер на коляску": { en: "Stroller organizer", it: "Organizer per passeggino" },
+  "Приставна платформа для старшої дитини": {
+    en: "Ride-on board for an older child",
+    it: "Pedana per il bambino più grande",
+  },
+  "Вкладиш для новонародженого": { en: "Newborn insert", it: "Riduttore per neonato" },
+  "Вкладиш у прогулянковий блок універсальний": {
+    en: "Universal seat-unit insert",
+    it: "Riduttore universale per seduta",
+  },
+  "Конверт фірмовий для коляски": { en: "Branded stroller footmuff", it: "Sacco coprigambe per passeggino" },
+  "Конверт зимовий для коляски": { en: "Winter stroller footmuff", it: "Sacco invernale per passeggino" },
+  "Конверт демісезонний для коляски": {
+    en: "All-season stroller footmuff",
+    it: "Sacco coprigambe multistagione per passeggino",
+  },
+  "Конверт зимовий": { en: "Winter footmuff", it: "Sacco invernale coprigambe" },
+};
+
+const BRAND_RE = /\b(Anex|Cybex|Espiro|Bubu)\b/;
+
+/** Localize a Ukrainian product name to en/it (see NOUN_TRANSLATIONS). Unknown noun
+ *  phrases fall through unchanged — the caller still gets a usable string. */
+export function localizeName(nameUa: string, locale: "en" | "it"): string {
+  // "N в N" configuration token → "N in N" (identical for en and it).
+  const s = nameUa.replace(/(\d+)\s+в\s+(\d+)/g, "$1 in $2");
+
+  // Split off the leading noun phrase: everything before the brand token, or (for
+  // brandless accessories) everything before the trailing "(...)" colour group.
+  const brand = s.match(BRAND_RE);
+  let noun: string;
+  let tail: string;
+  if (brand && brand.index !== undefined) {
+    noun = s.slice(0, brand.index).trim();
+    tail = s.slice(brand.index).trim();
+  } else {
+    const paren = s.match(/\s*\([^)]*\)\s*$/);
+    if (paren && paren.index !== undefined) {
+      noun = s.slice(0, paren.index).trim();
+      tail = paren[0].trim();
+    } else {
+      noun = s.trim();
+      tail = "";
+    }
+  }
+
+  const translated = NOUN_TRANSLATIONS[noun]?.[locale] ?? noun;
+  return [translated, tail].filter(Boolean).join(" ");
+}
+
 // Product catalog is split by brand (scripts/seed-data-anex.ts, seed-data-cybex.ts,
 // seed-data-espiro.ts) to keep files manageable; combined here for seed.ts / demo.ts.
-export const products: ProductSeed[] = [...anexProducts, ...cybexProducts, ...espiroProducts];
+// name_it / name_en are derived from name_ua so all four locales show a real name.
+export const products: ProductSeed[] = [...anexProducts, ...cybexProducts, ...espiroProducts].map((p) => ({
+  ...p,
+  name_en: localizeName(p.name_ua, "en"),
+  name_it: localizeName(p.name_ua, "it"),
+}));
