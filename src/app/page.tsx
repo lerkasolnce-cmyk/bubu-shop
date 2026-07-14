@@ -55,8 +55,7 @@ async function getCategoriesWithCounts(): Promise<(Category & { count: number })
         const childIds = demoCategories.filter((c) => c.parent_id === cat.id).map((c) => c.id);
         const ids = new Set([cat.id, ...childIds]);
         return { ...cat, count: demoProducts.filter((p) => p.category_id != null && ids.has(p.category_id)).length };
-      })
-      .filter((cat) => cat.count > 0);
+      });
   }
 
   try {
@@ -70,7 +69,7 @@ async function getCategoriesWithCounts(): Promise<(Category & { count: number })
 
     const roots = allCategories.filter((c) => c.parent_id === null);
 
-    // N=3 root categories — per-category count queries (root + its children) are
+    // N=10 root categories — per-category count queries (root + its children) are
     // simple and fine here.
     const counts = await Promise.all(
       roots.map(async (cat) => {
@@ -83,9 +82,7 @@ async function getCategoriesWithCounts(): Promise<(Category & { count: number })
       })
     );
 
-    return roots
-      .map((cat, i) => ({ ...cat, count: counts[i] }))
-      .filter((cat) => cat.count > 0) as (Category & { count: number })[];
+    return roots.map((cat, i) => ({ ...cat, count: counts[i] })) as (Category & { count: number })[];
   } catch {
     return [];
   }
@@ -112,7 +109,12 @@ export default async function Home() {
     <div className="flex flex-col gap-12 pb-12">
       {/* The category cards live INSIDE the hero: they drop in during the petal
           transition and stand on the risen wave at the pin's end. */}
-      <NatureHero title={t("hero.title")} subtitle={t("hero.subtitle")} cta={t("hero.cta")}>
+      <NatureHero
+        title={t("hero.title")}
+        subtitle={t("hero.subtitle")}
+        cta={t("hero.cta")}
+        categoriesLabel={t("home.categories")}
+      >
         <CategoryGrid categories={categoryCards} t={t} variant="plain" />
       </NatureHero>
       <Reveal delay={80}>

@@ -14,15 +14,21 @@
 }
 
 body {
-  /* Layered "living" cream: soft pastel washes in the corners + a faint paper
-     grain over the base colour. Every layer is extremely low-contrast so text
-     and product photos stay perfectly readable. */
+  /* Layered "crumpled beige paper": soft pastel washes in the corners, a
+     visible dual-layer paper grain, and a few faint crease streaks to hint
+     at folds. Every layer stays low-contrast so text and product photos
+     remain perfectly readable (cards are white; this mainly affects
+     body-level text like the footer). */
   background-color: var(--color-cream);
   background-image:
     /* fine dark paper grain */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
-    /* soft light paper fibres (larger scale, white specks) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.28' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='340' height='340' fill='white' filter='url(%23f)' opacity='0.07'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"),
+    /* coarser light paper fibres (larger scale, white specks) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.28' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='340' height='340' fill='white' filter='url(%23f)' opacity='0.08'/%3E%3C/svg%3E"),
+    /* crease streaks: faint diagonal folds in the paper */
+    linear-gradient(115deg, transparent 42%, rgba(74, 59, 50, 0.04) 50%, transparent 58%),
+    linear-gradient(35deg, transparent 30%, rgba(74, 59, 50, 0.03) 38%, transparent 46%),
+    linear-gradient(160deg, transparent 60%, rgba(74, 59, 50, 0.05) 68%, transparent 76%),
     /* pastel corner washes: blush top-left, mint right, warm peach at the foot */
     radial-gradient(90rem 60rem at -10% -10%, rgba(245, 215, 215, 0.35), transparent 60%),
     radial-gradient(80rem 55rem at 110% 15%, rgba(205, 232, 221, 0.32), transparent 60%),

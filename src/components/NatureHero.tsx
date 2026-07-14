@@ -53,12 +53,15 @@ export default function NatureHero({
   subtitle,
   cta,
   ctaHref = "/catalog/strollers-2in1",
+  categoriesLabel,
   children,
 }: {
   title: string;
   subtitle: string;
   cta: string;
   ctaHref?: string;
+  // Heading shown above the category cards, fades in alongside them.
+  categoriesLabel?: string;
   // Rendered as an overlay that drops in during the petal transition (the
   // category cards) and remains standing on the risen wave at the pin's end.
   children?: React.ReactNode;
@@ -70,6 +73,7 @@ export default function NatureHero({
   const textRef = useRef<HTMLDivElement>(null);
   const waveRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
+  const cardsHeadingRef = useRef<HTMLHeadingElement>(null);
 
   // Default to the "safe" static state (last frame) so SSR/no-JS/reduced-motion
   // users always see a correct, complete hero with zero CLS. Only flipped once
@@ -92,6 +96,7 @@ export default function NatureHero({
       const text = textRef.current;
       const wave = waveRef.current;
       const cardsWrap = cardsRef.current;
+      const cardsHeading = cardsHeadingRef.current;
       if (!section || !pin || !stage || !canvas || !text || !wave) return;
       const cards: HTMLElement[] = cardsWrap
         ? (gsap.utils.toArray("[data-hero-card]", cardsWrap) as HTMLElement[])
@@ -266,6 +271,7 @@ export default function NatureHero({
           gsap.set(wave, { yPercent: 100 });
           pin!.style.backgroundColor = `rgb(${BG_FROM[0]}, ${BG_FROM[1]}, ${BG_FROM[2]})`;
           if (cardsWrap) cardsWrap.style.pointerEvents = "none";
+          if (cardsHeading) gsap.set(cardsHeading, { opacity: 0, y: -32 });
           cards.forEach((card) => gsap.set(card, { opacity: 0, y: -window.innerHeight * 0.45 }));
         } else {
           // Exit transition: petals scatter, text fades, the cream wave rises,
@@ -280,6 +286,12 @@ export default function NatureHero({
           const mix = (k: number) => Math.round(BG_FROM[k] + (BG_TO[k] - BG_FROM[k]) * t);
           pin!.style.backgroundColor = `rgb(${mix(0)}, ${mix(1)}, ${mix(2)})`;
 
+          if (cardsHeading) {
+            // The heading fades in just ahead of the first cards' landing.
+            const hTau = Math.min(1, Math.max(0, (t - 0.18) / 0.4));
+            const hEase = 1 - (1 - hTau) * (1 - hTau);
+            gsap.set(cardsHeading, { opacity: hTau, y: -32 * (1 - hEase) });
+          }
           cards.forEach((card, i) => {
             // Staggered drop: card i starts falling at delay_i and lands softly
             // (decelerating curve). Scrub-driven, fully reversible.
@@ -308,7 +320,9 @@ export default function NatureHero({
 
       const isTouch = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
       // A bit longer than the plain scrub: the tail hosts the petal transition.
-      section.style.setProperty("--scene-height", isTouch ? "280vh" : "340vh");
+      // Kept as tight as the scrub + scatter + card drop allow so the content
+      // below follows immediately after the unpin.
+      section.style.setProperty("--scene-height", isTouch ? "260vh" : "320vh");
 
       const trigger = ScrollTrigger.create({
         trigger: section,
@@ -386,15 +400,28 @@ export default function NatureHero({
           <div className="h-full w-full bg-cream" />
         </div>
 
-        {/* Category cards: drop in during the petal transition and stay standing
-            on the risen wave (visible immediately in the static fallback). */}
+        {/* Category cards: drop in during the petal transition and rest
+            vertically centered in the viewport at the pin's end-state
+            (visible immediately, centered, in the static fallback).
+            The wrapper itself never intercepts clicks — the animation code
+            flips its pointer-events on once the cards have landed; in the
+            static state the inner block re-enables them so the hero CTA
+            above stays clickable through the empty areas. */}
         {children && (
           <div
             ref={cardsRef}
-            className="absolute inset-x-0 bottom-0 z-20 pb-[7vh]"
-            style={{ pointerEvents: animated ? "none" : "auto" }}
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 pt-12 sm:gap-6 sm:pt-14"
+            style={{ pointerEvents: "none" }}
           >
-            {children}
+            {categoriesLabel && (
+              <h2
+                ref={cardsHeadingRef}
+                className="text-xl font-extrabold text-ink sm:text-2xl"
+              >
+                {categoriesLabel}
+              </h2>
+            )}
+            <div className={animated ? "w-full" : "w-full pointer-events-auto"}>{children}</div>
           </div>
         )}
 
