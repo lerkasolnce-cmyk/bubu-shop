@@ -272,7 +272,7 @@ export default function NatureHero({
           pin!.style.backgroundColor = `rgb(${BG_FROM[0]}, ${BG_FROM[1]}, ${BG_FROM[2]})`;
           if (cardsWrap) cardsWrap.style.pointerEvents = "none";
           if (cardsHeading) gsap.set(cardsHeading, { opacity: 0, y: -32 });
-          cards.forEach((card) => gsap.set(card, { opacity: 0, y: -window.innerHeight * 0.45 }));
+          cards.forEach((card) => gsap.set(card, { opacity: 0, y: -window.innerHeight * 0.22 }));
         } else {
           // Exit transition: petals scatter, text fades, the cream wave rises,
           // the background blends into the page colour — and the category cards
@@ -292,19 +292,26 @@ export default function NatureHero({
             const hEase = 1 - (1 - hTau) * (1 - hTau);
             gsap.set(cardsHeading, { opacity: hTau, y: -32 * (1 - hEase) });
           }
+          // Staggered drop that ADAPTS to the card count: the last card must
+          // finish landing well before the pin ends, or trailing cards freeze
+          // mid-fall (the "hung" bug with 10 cards). Spread every card's start
+          // across [0, SETTLE_BY - FALL] so all are settled by t = SETTLE_BY,
+          // leaving a calm settled band until the pin releases at t = 1.
+          const nCards = cards.length || 1;
+          const FALL = 0.4;
+          const SETTLE_BY = 0.8;
+          const step = nCards > 1 ? (SETTLE_BY - FALL) / (nCards - 1) : 0;
           cards.forEach((card, i) => {
-            // Staggered drop: card i starts falling at delay_i and lands softly
-            // (decelerating curve). Scrub-driven, fully reversible.
-            const delay = 0.22 + i * 0.09;
-            const tau = Math.min(1, Math.max(0, (t - delay) / 0.4));
+            const delay = i * step;
+            const tau = Math.min(1, Math.max(0, (t - delay) / FALL));
             const ease = 1 - (1 - tau) * (1 - tau); // ease-out quad
             gsap.set(card, {
-              opacity: Math.min(1, tau * 1.6),
-              y: -window.innerHeight * 0.45 * (1 - ease),
-              rotation: (hash(i + 7) - 0.5) * 6 * (1 - ease),
+              opacity: Math.min(1, tau * 1.8),
+              y: -window.innerHeight * 0.22 * (1 - ease),
+              rotation: (hash(i + 7) - 0.5) * 4 * (1 - ease),
             });
           });
-          if (cardsWrap) cardsWrap.style.pointerEvents = t > 0.85 ? "auto" : "none";
+          if (cardsWrap) cardsWrap.style.pointerEvents = t > SETTLE_BY ? "auto" : "none";
         }
       }
 
