@@ -7,10 +7,12 @@ export default function AddToCartButton({
   slug,
   label,
   disabled,
+  quantity = 1,
 }: {
   slug: string;
   label: string;
   disabled?: boolean;
+  quantity?: number;
 }) {
   const { add } = useCart();
   const [added, setAdded] = useState(false);
@@ -27,7 +29,7 @@ export default function AddToCartButton({
       disabled={disabled}
       onClick={() => {
         if (disabled) return;
-        add(slug);
+        add(slug, quantity);
         setAdded(true);
       }}
       className={

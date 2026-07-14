@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { __clearCache, formatPrice, getEurRate, uahToEur } from "@/lib/currency";
+import { __clearCache, discountPercent, formatPrice, getEurRate, uahToEur } from "@/lib/currency";
 
 const ORIGINAL_FALLBACK = process.env.EUR_UAH_FALLBACK_RATE;
 
@@ -51,6 +51,25 @@ describe("formatPrice", () => {
 
   it("falls back to UAH for locale 'it' when no rate is supplied", () => {
     expect(formatPrice(39000, "it")).toBe("₴39 000");
+  });
+});
+
+describe("discountPercent", () => {
+  it("computes the rounded percentage off when old_price is higher", () => {
+    expect(discountPercent(750, 1000)).toBe(25);
+  });
+
+  it("returns null when there's no old price", () => {
+    expect(discountPercent(750, null)).toBeNull();
+    expect(discountPercent(750, undefined)).toBeNull();
+  });
+
+  it("returns null when old_price is equal to price", () => {
+    expect(discountPercent(1000, 1000)).toBeNull();
+  });
+
+  it("returns null when old_price is lower than price (bad data)", () => {
+    expect(discountPercent(1000, 750)).toBeNull();
   });
 });
 

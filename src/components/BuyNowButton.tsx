@@ -7,10 +7,12 @@ export default function BuyNowButton({
   slug,
   label,
   disabled,
+  quantity = 1,
 }: {
   slug: string;
   label: string;
   disabled?: boolean;
+  quantity?: number;
 }) {
   const router = useRouter();
   const { add } = useCart();
@@ -21,7 +23,7 @@ export default function BuyNowButton({
       disabled={disabled}
       onClick={() => {
         if (disabled) return;
-        add(slug);
+        add(slug, quantity);
         router.push("/cart");
       }}
       className={

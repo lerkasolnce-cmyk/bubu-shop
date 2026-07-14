@@ -56,6 +56,16 @@ export async function getEurRate(): Promise<number> {
   }
 }
 
+/**
+ * Percentage discount for a sale price vs. its old price, rounded to the
+ * nearest whole percent (e.g. 1000 -> 750 = -25%). Returns null when there's
+ * no discount to show (no old price, or old price isn't actually higher).
+ */
+export function discountPercent(price: number, oldPrice: number | null | undefined): number | null {
+  if (oldPrice == null || oldPrice <= price) return null;
+  return Math.round((1 - price / oldPrice) * 100);
+}
+
 /** Test-only: resets the module-scope cache so getEurRate() re-fetches. */
 export function __clearCache(): void {
   cachedRate = null;

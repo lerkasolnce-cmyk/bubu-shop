@@ -6,7 +6,7 @@ export default function SpecsTable({ specs, title }: { specs: Product["specs"]; 
 
   return (
     <section>
-      <h2 className="mb-3 text-xl font-extrabold text-ink sm:text-2xl">{title}</h2>
+      {title && <h2 className="mb-3 text-xl font-extrabold text-ink sm:text-2xl">{title}</h2>}
       <div className="overflow-hidden rounded-lg border border-blush/40">
         <table className="w-full text-sm">
           <tbody>
