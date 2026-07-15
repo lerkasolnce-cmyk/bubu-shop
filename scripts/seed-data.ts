@@ -148,6 +148,14 @@ const NOUN_TRANSLATIONS: Record<string, { en: string; it: string }> = {
     it: "Sacco coprigambe multistagione per passeggino",
   },
   "Конверт зимовий": { en: "Winter footmuff", it: "Sacco invernale coprigambe" },
+  "Муфта-трансформер для коляски": {
+    en: "Convertible hand muff for a stroller",
+    it: "Manicotto trasformabile per passeggino",
+  },
+  "Хутряний капюшон для коляски": { en: "Fur hood trim for a stroller", it: "Bordo in pelliccia per passeggino" },
+  "Парасолька для коляски": { en: "Stroller parasol", it: "Ombrellino per passeggino" },
+  "Сумка для покупок на коляску": { en: "Stroller shopping bag", it: "Borsa spesa per passeggino" },
+  "Рюкзак для коляски": { en: "Stroller backpack", it: "Zaino per passeggino" },
 };
 
 const BRAND_RE = /\b(Anex|Cybex|Espiro|Bubu)\b/;
