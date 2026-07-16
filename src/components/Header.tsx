@@ -8,16 +8,15 @@ import LangSwitch from "./LangSwitch";
 import CartBadge from "./CartBadge";
 import MobileMenu from "./MobileMenu";
 
-async function getRootCategories(): Promise<Category[]> {
+async function getAllCategories(): Promise<Category[]> {
   // Supabase project may not exist yet (no env) — demo data for design preview.
-  if (isDemoMode()) return demoCategories.filter((c) => c.parent_id === null);
+  if (isDemoMode()) return demoCategories;
 
   try {
     const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("categories")
       .select("*")
-      .is("parent_id", null)
       .order("sort", { ascending: true });
 
     if (error || !data) return [];
@@ -30,7 +29,15 @@ async function getRootCategories(): Promise<Category[]> {
 export default async function Header() {
   const locale = await getLocale();
   const t = getT(locale);
-  const categories = await getRootCategories();
+  const allCategories = await getAllCategories();
+  const categories = allCategories.filter((c) => c.parent_id === null);
+  const childrenByParent = new Map<string, Category[]>();
+  for (const c of allCategories) {
+    if (!c.parent_id) continue;
+    const list = childrenByParent.get(c.parent_id) ?? [];
+    list.push(c);
+    childrenByParent.set(c.parent_id, list);
+  }
   const phone = t("header.phone");
   const phoneHref = telHref(phone);
 
@@ -103,18 +110,44 @@ export default async function Header() {
         />
       </div>
 
-      {categoryLinks.length > 0 && (
+      {categories.length > 0 && (
         <div className="hidden border-t border-blush/40 md:block">
-          <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-2">
-            {categoryLinks.map((cat) => (
-              <Link
-                key={cat.href}
-                href={cat.href}
-                className="shrink-0 rounded-full bg-mint/40 px-3 py-1 text-sm font-medium text-ink hover:bg-mint"
-              >
-                {cat.label}
-              </Link>
-            ))}
+          {/* flex-wrap (not overflow-x) so every category is always visible;
+              the dropdown is pure CSS (group-hover/focus-within), no JS. */}
+          <div className="mx-auto flex max-w-6xl flex-wrap gap-x-1.5 gap-y-1 px-4 py-2">
+            {categories.map((root, i) => {
+              const kids = childrenByParent.get(root.id) ?? [];
+              const alignRight = i >= categories.length - 2;
+              return (
+                <div key={root.id} className="group relative">
+                  <Link
+                    href={`/catalog/${root.slug}`}
+                    className="inline-block whitespace-nowrap rounded-full bg-mint/40 px-2.5 py-1 text-[13px] font-medium text-ink transition group-hover:bg-mint"
+                  >
+                    {pick(root, "name", locale)}
+                  </Link>
+                  {kids.length > 0 && (
+                    <div
+                      className={`invisible absolute top-full z-50 pt-1 opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 ${
+                        alignRight ? "right-0" : "left-0"
+                      }`}
+                    >
+                      <div className="min-w-52 rounded-xl border border-blush/40 bg-white p-2 shadow-lg">
+                        {kids.map((kid) => (
+                          <Link
+                            key={kid.id}
+                            href={`/catalog/${kid.slug}`}
+                            className="block whitespace-nowrap rounded-lg px-3 py-1.5 text-sm text-ink/80 hover:bg-blush/20 hover:text-ink"
+                          >
+                            {pick(kid, "name", locale)}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
