@@ -7,7 +7,9 @@ import { z } from "zod";
 export const orderSchema = z.object({
   customer: z.object({
     name: z.string().min(1),
-    phone: z.string().regex(/^\+380\d{9}$/),
+    // UA numbers (+380 + 9 digits) or Italian ones (+39 + 8-11 digits,
+    // landlines keep their leading 0 in international format).
+    phone: z.string().regex(/^(\+380\d{9}|\+39\d{8,11})$/),
     city: z.string().min(1),
     npOffice: z.string().optional().default(""),
     comment: z.string().optional().default(""),

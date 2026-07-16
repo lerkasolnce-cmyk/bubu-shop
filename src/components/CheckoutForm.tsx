@@ -53,6 +53,20 @@ function normalizePhoneDigits(raw: string): string {
   return trimmed.slice(0, 9);
 }
 
+/**
+ * Italian numbers: digits only, max 11. The leading 0 is kept (landlines carry
+ * it even in international format), and a pasted "39" country code is stripped
+ * only when the number is too long to be a national one — mobile prefixes like
+ * 393 are otherwise legitimate leading digits.
+ */
+function normalizeItPhoneDigits(raw: string): string {
+  let digitsOnly = raw.replace(/\D/g, "");
+  if (digitsOnly.startsWith("39") && digitsOnly.length > 11) {
+    digitsOnly = digitsOnly.slice(2);
+  }
+  return digitsOnly.slice(0, 11);
+}
+
 export default function CheckoutForm({
   locale,
   labels,
@@ -64,6 +78,10 @@ export default function CheckoutForm({
 }) {
   const router = useRouter();
   const { items, ready, clear } = useCart();
+  // it-locale checkout ships to Italy: plain address fields instead of the
+  // Nova Poshta pickers, and a +39 phone instead of +380.
+  const isItaly = locale === "it";
+  const phonePrefix = isItaly ? "+39" : "+380";
   // it-locale price display rule (kept in sync with CartView):
   // per-line UNIT prices and the GRAND total show € main + ₴ small underneath;
   // line subtotals (qty × price) show € only. This summary lists only line
@@ -132,7 +150,7 @@ export default function CheckoutForm({
     if (pending) return;
 
     const parsed = orderSchema.safeParse({
-      customer: { name, phone: `+380${phoneDigits}`, city, npOffice, comment },
+      customer: { name, phone: `${phonePrefix}${phoneDigits}`, city, npOffice, comment },
       items,
       paymentMethod,
       locale,
@@ -214,14 +232,18 @@ export default function CheckoutForm({
             <label className="mb-1 block text-sm font-semibold text-ink">{labels.phone}</label>
             <div className="flex items-center gap-2">
               <span className="shrink-0 rounded-md border border-blush/60 bg-cream px-3 py-2 text-sm font-semibold text-ink/70">
-                +380
+                {phonePrefix}
               </span>
               <input
                 type="tel"
                 inputMode="numeric"
                 value={phoneDigits}
-                onChange={(e) => setPhoneDigits(normalizePhoneDigits(e.target.value))}
-                placeholder="XXXXXXXXX"
+                onChange={(e) =>
+                  setPhoneDigits(
+                    isItaly ? normalizeItPhoneDigits(e.target.value) : normalizePhoneDigits(e.target.value)
+                  )
+                }
+                placeholder={isItaly ? "XXX XXXXXXX" : "XXXXXXXXX"}
                 className={inputCls}
                 autoComplete="tel-national"
               />
@@ -229,24 +251,50 @@ export default function CheckoutForm({
             {errors.phone && <p className={errorCls}>{errors.phone}</p>}
           </div>
 
-          <NpDeliveryFields
-            locale={locale}
-            labels={{
-              city: labels.city,
-              npOffice: labels.npOffice,
-              cityNoResults: labels.cityNoResults,
-              officeNoResults: labels.officeNoResults,
-              officeSearchPlaceholder: labels.officeSearchPlaceholder,
-              loading: labels.loading,
-            }}
-            city={city}
-            onCityChange={setCity}
-            npOffice={npOffice}
-            onNpOfficeChange={setNpOffice}
-            cityError={errors.city}
-            inputCls={inputCls}
-            errorCls={errorCls}
-          />
+          {isItaly ? (
+            <>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-ink">{labels.city}</label>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className={inputCls}
+                  autoComplete="address-level2"
+                />
+                {errors.city && <p className={errorCls}>{errors.city}</p>}
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-ink">{labels.npOffice}</label>
+                <input
+                  type="text"
+                  value={npOffice}
+                  onChange={(e) => setNpOffice(e.target.value)}
+                  className={inputCls}
+                  autoComplete="street-address"
+                />
+              </div>
+            </>
+          ) : (
+            <NpDeliveryFields
+              locale={locale}
+              labels={{
+                city: labels.city,
+                npOffice: labels.npOffice,
+                cityNoResults: labels.cityNoResults,
+                officeNoResults: labels.officeNoResults,
+                officeSearchPlaceholder: labels.officeSearchPlaceholder,
+                loading: labels.loading,
+              }}
+              city={city}
+              onCityChange={setCity}
+              npOffice={npOffice}
+              onNpOfficeChange={setNpOffice}
+              cityError={errors.city}
+              inputCls={inputCls}
+              errorCls={errorCls}
+            />
+          )}
 
           <div>
             <label className="mb-1 block text-sm font-semibold text-ink">{labels.comment}</label>
