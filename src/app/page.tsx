@@ -107,16 +107,17 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col gap-12 pb-12">
-      {/* The category cards live INSIDE the hero: they drop in during the petal
-          transition and stand on the risen wave at the pin's end. */}
-      <NatureHero
-        title={t("hero.title")}
-        subtitle={t("hero.subtitle")}
-        cta={t("hero.cta")}
-        categoriesLabel={t("home.categories")}
-      >
-        <CategoryGrid categories={categoryCards} t={t} variant="plain" />
-      </NatureHero>
+      <NatureHero title={t("hero.title")} subtitle={t("hero.subtitle")} cta={t("hero.cta")} />
+
+      {/* Categories are their own flow section after the hero — this keeps the grid
+          any height (10 cards = 5 rows on mobile) with no clipping, unlike the old
+          in-hero overlay that got cut off on small screens. */}
+      <section className="mx-auto w-full max-w-6xl px-4">
+        <h2 className="mb-6 text-center text-2xl font-extrabold text-ink sm:mb-8 sm:text-3xl">
+          {t("home.categories")}
+        </h2>
+        <CategoryGrid categories={categoryCards} t={t} />
+      </section>
       <Reveal delay={80}>
         <ProductRow title={t("home.hits")} products={hits} locale={locale} t={t} rate={rate} />
       </Reveal>

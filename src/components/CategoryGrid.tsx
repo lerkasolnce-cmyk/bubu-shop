@@ -132,6 +132,16 @@ function CategoryIcon({ slug }: { slug: string }) {
   }
 }
 
+// Soft pastel tile tints, cycled per card so the grid reads as a warm, colourful
+// set rather than flat white boxes. Each is a gentle two-stop gradient on-brand.
+const TILE_TINTS = [
+  "from-[#F7DBDB] to-[#FCEEEA]", // blush
+  "from-[#CFE9DE] to-[#EAF6F1]", // mint
+  "from-[#F7DDCB] to-[#FCEFE6]", // peach
+  "from-[#E5DEF2] to-[#F2EDFA]", // lavender
+  "from-[#F4E9C7] to-[#FBF5E1]", // butter
+];
+
 export default function CategoryGrid({
   categories,
   t,
@@ -139,26 +149,30 @@ export default function CategoryGrid({
 }: {
   categories: CategoryCard[];
   t: (key: string) => string;
-  // "reveal": standalone section with per-card IntersectionObserver reveals.
-  // "plain": bare cards tagged data-hero-card — NatureHero drives their drop-in
-  // itself, so Reveal's own transitions must not fight it.
+  // "reveal": per-card IntersectionObserver reveal (default). "plain": bare cards
+  // (e.g. when a parent drives their animation).
   variant?: "reveal" | "plain";
 }) {
   if (categories.length === 0) return null;
 
   const cards = categories.map((cat, i) => {
+    const tint = TILE_TINTS[i % TILE_TINTS.length];
     const card = (
       <Link
         href={`/catalog/${cat.slug}`}
-        className="flex h-full flex-col items-center gap-2 rounded-lg border border-blush/40 bg-white p-4 text-center transition hover:shadow-md"
+        className={`group flex h-full flex-col items-center justify-center gap-3 rounded-3xl bg-gradient-to-br ${tint} p-5 text-center shadow-sm ring-1 ring-black/[0.04] transition duration-200 hover:-translate-y-1 hover:shadow-md sm:p-6`}
       >
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-mint/40 text-ink">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/70 text-ink shadow-sm transition group-hover:scale-105 sm:h-[72px] sm:w-[72px]">
           <CategoryIcon slug={cat.slug} />
         </span>
-        <span className="text-sm font-semibold text-ink">{cat.name}</span>
-        <span className="text-xs text-ink/50">
-          {cat.count} {t(`category.products${pluralKey(cat.count)}`)}
-        </span>
+        <span className="text-sm font-bold leading-tight text-ink sm:text-base">{cat.name}</span>
+        {cat.count > 0 ? (
+          <span className="rounded-full bg-white/60 px-2.5 py-0.5 text-xs font-medium text-ink/60">
+            {cat.count} {t(`category.products${pluralKey(cat.count)}`)}
+          </span>
+        ) : (
+          <span className="text-xs font-medium text-ink/40">{t("category.comingSoon")}</span>
+        )}
       </Link>
     );
 
@@ -167,15 +181,11 @@ export default function CategoryGrid({
         {card}
       </div>
     ) : (
-      <Reveal key={cat.slug} delay={i * 60} className="h-full">
+      <Reveal key={cat.slug} delay={i * 50} className="h-full">
         {card}
       </Reveal>
     );
   });
 
-  return (
-    <section className="mx-auto w-full max-w-6xl px-4">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">{cards}</div>
-    </section>
-  );
+  return <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">{cards}</div>;
 }
