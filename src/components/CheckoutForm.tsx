@@ -11,6 +11,7 @@ import type { Product } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/shared";
 import { pick } from "@/lib/i18n/shared";
 import { formatPrice } from "@/lib/currency";
+import NpDeliveryFields from "@/components/NpDeliveryFields";
 
 export type CheckoutLabels = {
   title: string;
@@ -18,6 +19,10 @@ export type CheckoutLabels = {
   phone: string;
   city: string;
   npOffice: string;
+  cityNoResults: string;
+  officeNoResults: string;
+  officeSearchPlaceholder: string;
+  loading: string;
   comment: string;
   paymentTitle: string;
   paymentMono: string;
@@ -224,27 +229,24 @@ export default function CheckoutForm({
             {errors.phone && <p className={errorCls}>{errors.phone}</p>}
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-ink">{labels.city}</label>
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className={inputCls}
-              autoComplete="address-level2"
-            />
-            {errors.city && <p className={errorCls}>{errors.city}</p>}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-ink">{labels.npOffice}</label>
-            <input
-              type="text"
-              value={npOffice}
-              onChange={(e) => setNpOffice(e.target.value)}
-              className={inputCls}
-            />
-          </div>
+          <NpDeliveryFields
+            locale={locale}
+            labels={{
+              city: labels.city,
+              npOffice: labels.npOffice,
+              cityNoResults: labels.cityNoResults,
+              officeNoResults: labels.officeNoResults,
+              officeSearchPlaceholder: labels.officeSearchPlaceholder,
+              loading: labels.loading,
+            }}
+            city={city}
+            onCityChange={setCity}
+            npOffice={npOffice}
+            onNpOfficeChange={setNpOffice}
+            cityError={errors.city}
+            inputCls={inputCls}
+            errorCls={errorCls}
+          />
 
           <div>
             <label className="mb-1 block text-sm font-semibold text-ink">{labels.comment}</label>

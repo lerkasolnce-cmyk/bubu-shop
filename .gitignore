@@ -43,3 +43,5 @@ next-env.d.ts
 
 # project scratch (planning docs, not part of the app)
 .superpowers/
+
+.vercel
