@@ -8,6 +8,7 @@ import { telHref } from "@/lib/format";
 import LangSwitch from "./LangSwitch";
 import CartBadge from "./CartBadge";
 import MobileMenu from "./MobileMenu";
+import InstallApp from "./InstallApp";
 
 async function getAllCategories(): Promise<Category[]> {
   // Supabase project may not exist yet (no env) — demo data for design preview.
@@ -83,6 +84,10 @@ export default async function Header() {
         ) : (
           <span className="hidden shrink-0 text-sm font-semibold text-ink/80 lg:block">{phone}</span>
         )}
+
+        {/* Десктоп: кнопка установки PWA — рендерится только когда браузер
+            реально умеет ставить (Chrome/Edge прислали beforeinstallprompt). */}
+        <InstallApp variant="header" label={t("install.app")} iosHint={t("install.ios")} />
 
         {/* На телефоне переключатель языков живёт внутри мобильного меню —
             в строке шапки он отъедал место у поиска (сжимался до нуля). */}
