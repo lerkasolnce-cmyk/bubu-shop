@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Locale } from "@/lib/i18n/shared";
 import InstallApp from "./InstallApp";
+import LangSwitch from "./LangSwitch";
 
 interface MenuLink {
   href: string;
@@ -10,6 +12,7 @@ interface MenuLink {
 }
 
 export default function MobileMenu({
+  locale,
   categories,
   navLinks,
   menuLabel,
@@ -17,6 +20,7 @@ export default function MobileMenu({
   installLabel,
   installHint,
 }: {
+  locale: Locale;
   categories: MenuLink[];
   navLinks: MenuLink[];
   menuLabel: string;
@@ -33,7 +37,7 @@ export default function MobileMenu({
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? closeLabel : menuLabel}
         aria-expanded={open}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-blush/40"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint/50 hover:bg-mint"
       >
         {open ? (
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
@@ -48,6 +52,10 @@ export default function MobileMenu({
 
       {open && (
         <nav className="fixed inset-x-0 top-16 z-50 flex max-h-[75vh] flex-col gap-1 overflow-y-auto border-t border-blush/40 bg-cream px-4 py-3 shadow-lg">
+          {/* Языки — тут, а не в строке шапки: на телефоне им там не хватает места. */}
+          <div className="mb-1 flex justify-center border-b border-blush/40 pb-2">
+            <LangSwitch locale={locale} />
+          </div>
           {categories.map((c) => (
             <Link
               key={c.href}

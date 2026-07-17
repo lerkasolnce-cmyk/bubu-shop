@@ -84,7 +84,11 @@ export default async function Header() {
           <span className="hidden shrink-0 text-sm font-semibold text-ink/80 lg:block">{phone}</span>
         )}
 
-        <LangSwitch locale={locale} />
+        {/* На телефоне переключатель языков живёт внутри мобильного меню —
+            в строке шапки он отъедал место у поиска (сжимался до нуля). */}
+        <div className="hidden md:block">
+          <LangSwitch locale={locale} />
+        </div>
 
         <Link
           href="/cart"
@@ -104,6 +108,7 @@ export default async function Header() {
         </Link>
 
         <MobileMenu
+          locale={locale}
           categories={categoryLinks}
           navLinks={navLinks}
           menuLabel={t("header.menu")}
