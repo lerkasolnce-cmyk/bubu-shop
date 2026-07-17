@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getLocale, getT, pick } from "@/lib/i18n";
+import { categoryName } from "@/lib/categories-i18n";
 import { discountPercent, formatPrice, getEurRate } from "@/lib/currency";
 import { createServerClient } from "@/lib/supabase/server";
 import { demoCategories, demoProducts, isDemoMode } from "@/lib/demo";
@@ -149,7 +150,7 @@ export default async function ProductPage({
           <>
             <span aria-hidden="true">/</span>
             <Link href={`/catalog/${rootCategory.slug}`} className="hover:text-ink hover:underline">
-              {pick(rootCategory, "name", locale)}
+              {categoryName(rootCategory, locale)}
             </Link>
           </>
         )}
@@ -157,7 +158,7 @@ export default async function ProductPage({
           <>
             <span aria-hidden="true">/</span>
             <Link href={`/catalog/${leafCategory.slug}`} className="hover:text-ink hover:underline">
-              {pick(leafCategory, "name", locale)}
+              {categoryName(leafCategory, locale)}
             </Link>
           </>
         )}

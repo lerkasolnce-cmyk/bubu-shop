@@ -1,4 +1,5 @@
-import { getLocale, getT, pick } from "@/lib/i18n";
+import { getLocale, getT } from "@/lib/i18n";
+import { categoryName } from "@/lib/categories-i18n";
 import { getEurRate } from "@/lib/currency";
 import { createServerClient } from "@/lib/supabase/server";
 import { demoCategories, demoProducts, isDemoMode } from "@/lib/demo";
@@ -101,7 +102,7 @@ export default async function Home() {
 
   const categoryCards = categories.map((cat) => ({
     slug: cat.slug,
-    name: pick(cat, "name", locale),
+    name: categoryName(cat, locale),
     count: cat.count,
   }));
 

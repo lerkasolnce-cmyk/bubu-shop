@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getLocale, getT, pick } from "@/lib/i18n";
+import { getLocale, getT } from "@/lib/i18n";
+import { categoryName } from "@/lib/categories-i18n";
 import { createServerClient } from "@/lib/supabase/server";
 import type { Category } from "@/lib/types";
 import { demoCategories, isDemoMode } from "@/lib/demo";
@@ -50,7 +51,7 @@ export default async function Header() {
 
   const categoryLinks = categories.map((cat) => ({
     href: `/catalog/${cat.slug}`,
-    label: pick(cat, "name", locale),
+    label: categoryName(cat, locale),
   }));
 
   return (
@@ -112,9 +113,10 @@ export default async function Header() {
 
       {categories.length > 0 && (
         <div className="hidden border-t border-blush/40 md:block">
-          {/* flex-wrap (not overflow-x) so every category is always visible;
-              the dropdown is pure CSS (group-hover/focus-within), no JS. */}
-          <div className="mx-auto flex max-w-6xl flex-wrap gap-x-1.5 gap-y-1 px-4 py-2">
+          {/* Desktop (lg+): one row, spread edge-to-edge (flex-nowrap + justify-between).
+              Tablet (md): wraps to keep every chip visible. No overflow container, so the
+              pure-CSS dropdowns (group-hover/focus-within) are never clipped. */}
+          <div className="mx-auto flex max-w-6xl flex-wrap gap-x-1.5 gap-y-1 px-4 py-2 lg:flex-nowrap lg:justify-between lg:gap-x-0.5">
             {categories.map((root, i) => {
               const kids = childrenByParent.get(root.id) ?? [];
               const alignRight = i >= categories.length - 2;
@@ -122,9 +124,9 @@ export default async function Header() {
                 <div key={root.id} className="group relative">
                   <Link
                     href={`/catalog/${root.slug}`}
-                    className="inline-block whitespace-nowrap rounded-full bg-mint/40 px-2.5 py-1 text-[13px] font-medium text-ink transition group-hover:bg-mint"
+                    className="inline-block whitespace-nowrap rounded-full bg-mint/40 px-2.5 py-1 text-[13px] font-medium text-ink transition group-hover:bg-mint lg:px-1.5 lg:text-xs"
                   >
-                    {pick(root, "name", locale)}
+                    {categoryName(root, locale)}
                   </Link>
                   {kids.length > 0 && (
                     <div
@@ -139,7 +141,7 @@ export default async function Header() {
                             href={`/catalog/${kid.slug}`}
                             className="block whitespace-nowrap rounded-lg px-3 py-1.5 text-sm text-ink/80 hover:bg-blush/20 hover:text-ink"
                           >
-                            {pick(kid, "name", locale)}
+                            {categoryName(kid, locale)}
                           </Link>
                         ))}
                       </div>

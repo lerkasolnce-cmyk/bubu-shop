@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getLocale, getT, pick } from "@/lib/i18n";
+import { getLocale, getT } from "@/lib/i18n";
+import { categoryName } from "@/lib/categories-i18n";
 import { getEurRate } from "@/lib/currency";
 import { createServerClient } from "@/lib/supabase/server";
 import { fetchProducts, fetchBrands, parseQueryFromSearchParams, buildHref, pluralKey, PAGE_SIZE } from "@/lib/catalog";
@@ -68,7 +69,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const category = await getCategoryBySlug(slug);
   const locale = await getLocale();
-  const title = category ? pick(category, "name", locale) : humanizeSlug(slug);
+  const title = category ? categoryName(category, locale) : humanizeSlug(slug);
 
   return { title };
 }
@@ -106,7 +107,7 @@ export default async function CategoryPage({
   ]);
 
   const basePath = `/catalog/${slug}`;
-  const title = category ? pick(category, "name", locale) : humanizeSlug(slug);
+  const title = category ? categoryName(category, locale) : humanizeSlug(slug);
 
   const sortLabels: Record<SortKey, string> = {
     new: t("catalog.sortNewest"),
@@ -130,7 +131,7 @@ export default async function CategoryPage({
               href={`/catalog/${child.slug}`}
               className="rounded-full bg-mint/40 px-4 py-1.5 text-sm font-medium text-ink hover:bg-mint"
             >
-              {pick(child, "name", locale)}
+              {categoryName(child, locale)}
             </Link>
           ))}
         </div>
@@ -141,7 +142,7 @@ export default async function CategoryPage({
             href={`/catalog/${parent.slug}`}
             className="inline-block rounded-full bg-mint/40 px-4 py-1.5 text-sm font-medium text-ink hover:bg-mint"
           >
-            ← {pick(parent, "name", locale)}
+            ← {categoryName(parent, locale)}
           </Link>
         </div>
       )}
