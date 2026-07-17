@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import InstallApp from "./InstallApp";
 
 interface MenuLink {
   href: string;
@@ -13,11 +14,15 @@ export default function MobileMenu({
   navLinks,
   menuLabel,
   closeLabel,
+  installLabel,
+  installHint,
 }: {
   categories: MenuLink[];
   navLinks: MenuLink[];
   menuLabel: string;
   closeLabel: string;
+  installLabel: string;
+  installHint: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -66,6 +71,7 @@ export default function MobileMenu({
               {n.label}
             </Link>
           ))}
+          <InstallApp label={installLabel} iosHint={installHint} />
         </nav>
       )}
     </div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
@@ -27,6 +27,19 @@ export const metadata: Metadata = {
     type: "website",
     description: DEFAULT_DESCRIPTION,
   },
+  // iOS игнорирует manifest.webmanifest — ему нужны apple-теги (см. спеку PWA).
+  appleWebApp: {
+    capable: true,
+    title: "bu-bu",
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#fbf7f0", // --color-cream
 };
 
 export default async function RootLayout({

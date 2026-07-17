@@ -108,6 +108,8 @@ export default async function Header() {
           navLinks={navLinks}
           menuLabel={t("header.menu")}
           closeLabel={t("header.close")}
+          installLabel={t("install.app")}
+          installHint={t("install.ios")}
         />
       </div>
 
